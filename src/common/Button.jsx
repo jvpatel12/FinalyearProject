@@ -22,6 +22,7 @@ const Button = ({
     primary: 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95 shadow-md hover:shadow-lg disabled:bg-blue-400',
     secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 active:scale-95 disabled:bg-gray-100',
     outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50 active:scale-95 disabled:border-gray-300 disabled:text-gray-300',
+    'outline-white': 'border-2 border-white/30 text-white hover:bg-white/10 active:scale-95 disabled:border-gray-600 disabled:text-gray-500',
     danger: 'bg-red-600 text-white hover:bg-red-700 active:scale-95 shadow-md hover:shadow-lg disabled:bg-red-400',
   };
 

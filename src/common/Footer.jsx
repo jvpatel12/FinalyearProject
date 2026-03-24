@@ -44,23 +44,25 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-gray-300 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2364B5F6%22%20fill-opacity%3D%220.03%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
+    <footer className="bg-background text-text-muted relative overflow-hidden border-t border-slate-800/50">
+      {/* Background Tech Accent */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
 
       {/* Main Footer Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           {/* Brand & About */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+            <div className="flex items-center gap-2 mb-4 group cursor-pointer">
+              <div className="w-8 h-8 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.4)] group-hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] transition-all">
                 <span className="text-white font-bold text-lg">L</span>
               </div>
-              <span className="text-xl font-bold text-white gradient-text">LogiMart</span>
+              <span className="text-xl font-bold text-white tracking-wider group-hover:text-glow transition-all">
+                Logi<span className="text-cyan-400">Mart</span>
+              </span>
             </div>
-            <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-              Your trusted online marketplace for quality electronics and fast, secure delivery across the globe.
+            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+              Equipping the future, today. Browse our selection of premium futuristic hardware.
             </p>
 
             {/* Social Links */}
@@ -73,7 +75,7 @@ const Footer = () => {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-blue-400 transition-all duration-300 hover:scale-110 p-2 hover:bg-white/10 rounded-lg"
+                    className="text-slate-500 hover:text-cyan-400 transition-colors duration-200 p-2 hover:bg-slate-800/80 rounded-lg border border-transparent hover:border-slate-700"
                     aria-label={social.label}
                   >
                     <Icon size={20} />
@@ -86,66 +88,43 @@ const Footer = () => {
           {/* Footer Links */}
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
-              <h3 className="text-white font-semibold mb-4 text-lg">{title}</h3>
+              <h3 className="text-white font-semibold mb-4 text-sm tracking-widest uppercase">{title}</h3>
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.label}>
                     <Link
                       to={link.href}
-                      className="text-gray-400 hover:text-white transition-all duration-300 hover:translate-x-1 inline-block relative group"
+                      className="text-slate-400 hover:text-cyan-400 transition-colors duration-200 inline-block relative group text-sm"
                     >
                       {link.label}
-                      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-indigo-400 group-hover:w-full transition-all duration-300"></span>
+                      <span className="absolute -bottom-1 left-0 w-0 h-px bg-cyan-500 group-hover:w-full transition-all duration-300"></span>
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
           ))}
-        </div>
 
-        {/* Contact Info */}
-        <div className="border-t border-gray-800/50 mt-12 pt-8 mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="flex gap-3 group">
-              <Mail size={20} className="text-blue-500 flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-300" />
-              <div>
-                <p className="text-sm text-gray-400 mb-1">Email</p>
-                <a href="mailto:jeel@logimart.com" className="text-white hover:text-blue-400 transition-all duration-300 hover:translate-x-1 inline-block">
-                  jeel@logimart.com
-                </a>
-              </div>
-            </div>
-
-            <div className="flex gap-3 group">
-              <Phone size={20} className="text-blue-500 flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-300" />
-              <div>
-                <p className="text-sm text-gray-400 mb-1">Phone</p>
-                <a href="tel:+91972638****" className="text-white hover:text-blue-400 transition-all duration-300 hover:translate-x-1 inline-block">
-                  +91 972638****
-                </a>
-              </div>
-            </div>
-
-            <div className="flex gap-3 group">
-              <MapPin size={20} className="text-blue-500 flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-300" />
-              <div>
-                <p className="text-sm text-gray-400 mb-1">Address</p>
-                <p className="text-white hover:text-blue-400 transition-all duration-300 hover:translate-x-1 inline-block">
-                  Guj, India 384151
-                </p>
-              </div>
+          {/* Newsletter Input (Replacing pure contact info to match tech store vibe) */}
+          <div className="md:col-span-1">
+            <h3 className="text-white font-semibold mb-4 text-sm tracking-widest uppercase">Newsletter</h3>
+            <p className="text-sm text-slate-400 mb-4">Get the latest updates on future tech.</p>
+            <div className="flex gap-2">
+              <input type="email" placeholder="Email" className="bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 w-full" />
+              <button className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold px-4 py-2 rounded-lg text-sm transition-colors shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                Join
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Bottom Bar */}
-      <div className="bg-gray-800/50 border-t border-gray-800/50 backdrop-blur-sm">
+      <div className="bg-slate-900/50 border-t border-slate-800/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-gray-400">
-            <p className="mb-2 sm:mb-0">© {currentYear} <span className="gradient-text font-semibold">LogiMart</span>. All rights reserved.</p>
-            <p className="text-center sm:text-right">Made with <span className="text-red-400 animate-pulse">❤️</span> for online shoppers worldwide</p>
+          <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 tracking-wider">
+            <p className="mb-2 sm:mb-0">© {currentYear} <span className="text-cyan-500 font-semibold">CyberStore Technologies</span>. All rights reserved.</p>
+            <p className="text-center sm:text-right">Built for the future.</p>
           </div>
         </div>
       </div>

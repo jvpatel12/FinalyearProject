@@ -17,11 +17,30 @@ const SellerEarnings = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+
   useEffect(() => {
     fetchEarnings();
   }, [user]);
 
+  const handleWithdraw = () => {
+    const amount = parseFloat(withdrawAmount);
+    if (amount > 0 && amount <= stats.withdrawable) {
+      // In a real app, API call to process withdrawal
+      setStats(prev => ({
+        ...prev,
+        withdrawable: prev.withdrawable - amount,
+        pendingClearance: prev.pendingClearance // In real logic, might move to a "Processing" status
+      }));
+      alert(`Withdrawal request for ₹${amount} submitted successfully!`);
+      setShowWithdrawModal(false);
+      setWithdrawAmount('');
+    }
+  };
+
   const fetchEarnings = async () => {
+    console.log("fetchEarning is running")
     if (!user?.id) return;
     try {
       const products = await apiService.products.getAll();
@@ -75,7 +94,10 @@ const SellerEarnings = () => {
           <h2 className="text-2xl font-bold text-gray-900">Earnings & Payouts</h2>
           <p className="text-gray-600">Track your revenue and manage withdrawals</p>
         </div>
-        <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 font-medium shadow-sm">
+        <button
+          onClick={() => setShowWithdrawModal(true)}
+          className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 font-medium shadow-sm"
+        >
           Withdraw Funds
         </button>
       </div>
@@ -155,6 +177,52 @@ const SellerEarnings = () => {
           </div>
         </div>
       </div>
+      {/* Withdrawal Modal */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Withdraw Funds</h3>
+
+            <div className="bg-purple-50 p-4 rounded-lg mb-6">
+              <p className="text-sm text-purple-700 font-medium">Available Balance</p>
+              <p className="text-2xl font-bold text-purple-900">₹{stats.withdrawable.toLocaleString()}</p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Amount to Withdraw
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                <input
+                  type="number"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  placeholder="0.00"
+                  max={stats.withdrawable}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWithdrawModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 bg-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleWithdraw}
+                disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0 || parseFloat(withdrawAmount) > stats.withdrawable}
+                className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirm Withdraw
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

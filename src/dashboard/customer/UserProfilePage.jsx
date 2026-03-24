@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, MapPin, Edit, Save, X } from 'lucide-react';
 import { useAuth } from '../../auth/useAuth';
+import AddressManagement from './AddressManagement';
 
 /**
  * User Profile Page Component
@@ -12,11 +13,7 @@ const UserProfilePage = () => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: user?.phone || '',
-    address: user?.address || '',
-    city: user?.city || '',
-    state: user?.state || '',
-    zipCode: user?.zipCode || ''
+    phone: user?.phone || ''
   });
 
   const handleInputChange = (e) => {
@@ -164,87 +161,7 @@ const UserProfilePage = () => {
 
               {/* Address Information */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Address Information</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Address
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <div className="flex items-center px-3 py-2 bg-gray-50 rounded-md">
-                        <MapPin className="w-4 h-4 text-gray-400 mr-2" />
-                        <span>{user?.address || 'Not provided'}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        City
-                      </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      ) : (
-                        <div className="px-3 py-2 bg-gray-50 rounded-md">
-                          <span>{user?.city || 'Not provided'}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        State
-                      </label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          name="state"
-                          value={formData.state}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      ) : (
-                        <div className="px-3 py-2 bg-gray-50 rounded-md">
-                          <span>{user?.state || 'Not provided'}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ZIP Code
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <div className="px-3 py-2 bg-gray-50 rounded-md">
-                        <span>{user?.zipCode || 'Not provided'}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <AddressManagement />
               </div>
             </div>
           </div>

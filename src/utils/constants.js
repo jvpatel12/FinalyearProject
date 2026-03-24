@@ -33,14 +33,14 @@ export const ORDER_STATUSES = {
 
 // Product categories
 export const PRODUCT_CATEGORIES = [
-  'Electronics',
-  'Clothing',
-  'Home & Garden',
-  'Sports & Outdoors',
-  'Books',
-  'Health & Beauty',
-  'Toys & Games',
-  'Automotive'
+  'Smartphones',
+  'Laptops',
+  'Headphones',
+  'Tablets',
+  'Accessories',
+  'Cameras',
+  'Gaming',
+  'Wearables'
 ];
 
 // Payment methods

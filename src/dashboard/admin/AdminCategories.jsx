@@ -1,18 +1,34 @@
 import React, { useState } from 'react';
 import { Tag, Plus, Edit, Trash2 } from 'lucide-react';
+import storageService from '../../services/storageService';
 
 /**
  * Admin Categories Page Component
  * Manage product categories in the admin dashboard
  */
 const AdminCategories = () => {
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Electronics', productCount: 45, status: 'active' },
-    { id: 2, name: 'Clothing', productCount: 32, status: 'active' },
-    { id: 3, name: 'Home & Garden', productCount: 28, status: 'active' },
-    { id: 4, name: 'Books', productCount: 15, status: 'active' },
-    { id: 5, name: 'Sports', productCount: 12, status: 'inactive' }
-  ]);
+  const [categories, setCategoriesState] = useState(() => {
+    const saved = storageService.getCategories();
+    if (saved && saved.length > 0) {
+      return saved.map(cat => ({
+        ...cat,
+        productCount: cat.productCount ?? cat.count ?? 0,
+        status: cat.status || 'active'
+      }));
+    }
+    return [
+      { id: 1, name: 'Electronics', productCount: 45, status: 'active' },
+      { id: 2, name: 'Clothing', productCount: 32, status: 'active' },
+      { id: 3, name: 'Home & Garden', productCount: 28, status: 'active' },
+      { id: 4, name: 'Books', productCount: 15, status: 'active' },
+      { id: 5, name: 'Sports', productCount: 12, status: 'inactive' }
+    ];
+  });
+
+  const setCategories = (newCategories) => {
+    setCategoriesState(newCategories);
+    storageService.saveCategories(newCategories);
+  };
 
   const [newCategory, setNewCategory] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -121,9 +137,8 @@ const AdminCategories = () => {
                   <div className="text-sm text-gray-900">{category.productCount} products</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    category.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${category.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
                     {category.status.charAt(0).toUpperCase() + category.status.slice(1)}
                   </span>
                 </td>

@@ -21,22 +21,17 @@ const SellerOrders = () => {
   const fetchOrders = async () => {
     if (!user?.id) return;
     try {
-      // 1. Get Seller's Product IDs
-      const products = await apiService.products.getAll();
-      const sellerProducts = products.filter(p => p.sellerId === user.id);
-      const sellerProductIds = sellerProducts.map(p => p.id);
+      // Use dedicated API method
+      const sellerOrdersRaw = await apiService.orders.getSellerOrders(user.id);
 
-      // 2. Get All Orders and Filter
-      const allOrders = await apiService.orders.getAll();
-      const sellerOrders = allOrders.filter(order =>
-        order.items.some(item => sellerProductIds.includes(item.productId))
-      ).map(order => ({
+      // Calculate specific metrics for this seller
+      const sellerOrders = sellerOrdersRaw.map(order => ({
         ...order,
         // Calculate total for only this seller's items in the order
         sellerTotal: order.items
-          .filter(item => sellerProductIds.includes(item.productId))
+          .filter(item => item.sellerId === user.id)
           .reduce((sum, item) => sum + (item.price * item.quantity), 0),
-        itemsCount: order.items.filter(item => sellerProductIds.includes(item.productId)).length
+        itemsCount: order.items.filter(item => item.sellerId === user.id).length
       }));
 
       setOrders(sellerOrders);
@@ -75,6 +70,13 @@ const SellerOrders = () => {
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getOrderName = (order) => {
+    const items = order.items || order.orderItems || [];
+    if (items.length === 0) return 'Unknown Items';
+    if (items.length === 1) return items[0].name;
+    return `${items[0].name} +${items.length - 1} more`;
   };
 
   return (
@@ -130,7 +132,12 @@ const SellerOrders = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">#{order.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-gray-900">#{order.id}</div>
+                      <div className="text-xs text-gray-500 font-normal truncate max-w-[200px]" title={getOrderName(order)}>
+                        {getOrderName(order)}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {order.itemsCount} items
                     </td>

@@ -7,20 +7,38 @@
 export const userCredentials = [
   // Customer users
   {
-    email: 'customer@example.com',
+    email: 'jeel@example.com',
     password: 'customer123',
     role: 'customer',
     userId: 1,
-    name: 'John Doe',
+    name: 'Jeel Patel',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80'
   },
   {
-    email: 'jane@example.com',
+    email: 'amit@example.com',
     password: 'customer123',
     role: 'customer',
     userId: 2,
-    name: 'Jane Smith',
+    name: 'Amit Kumar',
     avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&q=80'
+  },
+
+  // Seller users
+  {
+    email: 'seller@ayush.com',
+    password: 'seller123',
+    role: 'seller',
+    userId: 3,
+    name: 'Ayush Electronics',
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80'
+  },
+  {
+    email: 'seller@patel.com',
+    password: 'seller123',
+    role: 'seller',
+    userId: 4,
+    name: 'Patel Gadgets',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80'
   },
 
   // Admin user
@@ -39,40 +57,6 @@ export const userCredentials = [
     userId: 6,
     name: 'Admin User',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80'
-  },
-
-  // Seller users
-  {
-    email: 'seller@techstore.com',
-    password: 'seller123',
-    role: 'seller',
-    userId: 1,
-    name: 'TechStore Pro',
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80'
-  },
-  {
-    email: 'seller@gadgethub.com',
-    password: 'seller123',
-    role: 'seller',
-    userId: 2,
-    name: 'GadgetHub',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80'
-  },
-  {
-    email: 'seller@dell.com',
-    password: 'seller123',
-    role: 'seller',
-    userId: 3,
-    name: 'Dell Store',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80'
-  },
-  {
-    email: 'seller@google.com',
-    password: 'seller123',
-    role: 'seller',
-    userId: 4,
-    name: 'Google Store',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80'
   }
 ];
 

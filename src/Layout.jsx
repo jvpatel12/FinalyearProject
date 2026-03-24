@@ -21,11 +21,16 @@ function Layout() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-text-main">
-      {/* Background Pattern Overlay */}
-      <div className="fixed inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%239C92AC%22%20fill-opacity%3D%220.03%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] pointer-events-none opacity-20"></div>
+    <div className="flex flex-col min-h-screen bg-background text-text-main custom-scrollbar">
+      {/* Background Pattern Overlay - Subtle dot grid for tech vibe */}
+      <div className="fixed inset-0 pointer-events-none opacity-5"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.4) 1px, transparent 0)',
+          backgroundSize: '24px 24px'
+        }}
+      ></div>
 
-      {/* Navigation Bar with enhanced styling */}
+      {/* Navigation Bar */}
       <div className="relative z-50">
         <NavBar
           onSearch={handleSearch}
@@ -33,14 +38,14 @@ function Layout() {
         />
       </div>
 
-      {/* Main Content with enhanced container */}
+      {/* Main Content */}
       <main className="flex-1 w-full relative z-10 pt-20">
         <div className="min-h-full">
           <Outlet />
         </div>
       </main>
 
-      {/* Footer with enhanced styling */}
+      {/* Footer */}
       <div className="relative z-10">
         <Footer />
       </div>
@@ -48,7 +53,7 @@ function Layout() {
       {/* Scroll to top button */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 z-40"
+        className="fixed bottom-8 right-8 bg-cyan-600/80 hover:bg-cyan-500 text-white p-3 rounded-full border border-cyan-400/50 shadow-[0_0_15px_rgba(6,182,212,0.5)] hover:shadow-[0_0_25px_rgba(6,182,212,0.8)] transform hover:scale-110 transition-all duration-300 z-40 backdrop-blur-sm"
         aria-label="Scroll to top"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

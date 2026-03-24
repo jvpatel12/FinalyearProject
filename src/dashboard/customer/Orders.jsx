@@ -68,6 +68,13 @@ const Orders = () => {
     });
   };
 
+  const getOrderName = (order) => {
+    const items = order.items || order.orderItems || [];
+    if (items.length === 0) return 'Unknown Items';
+    if (items.length === 1) return items[0].name;
+    return `${items[0].name} +${items.length - 1} more`;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
@@ -107,13 +114,14 @@ const Orders = () => {
                         {getStatusIcon(order.status)}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-bold text-gray-900">Order #{order.id}</span>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusColor(order.status)}`}>
                             {order.status.toUpperCase()}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">Placed on {formatDate(order.date)}</p>
+                        <p className="text-sm font-medium text-gray-800 line-clamp-1" title={getOrderName(order)}>{getOrderName(order)}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Placed on {formatDate(order.date)}</p>
                       </div>
                     </div>
                     <div className="text-left md:text-right">

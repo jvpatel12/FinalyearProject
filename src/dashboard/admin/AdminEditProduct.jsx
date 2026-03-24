@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiService } from '../../services/apiService';
+import { PRODUCT_CATEGORIES } from '../../utils/constants';
 
 /**
  * Admin Edit Product Page Component
@@ -14,11 +15,15 @@ const AdminEditProduct = () => {
     name: '',
     description: '',
     price: '',
-    category: 'Electronics',
+    category: PRODUCT_CATEGORIES[0],
     brand: '',
     stock: '',
-    image: ''
+    image: '',
+    originalPrice: '',
+    discount: ''
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -37,7 +42,9 @@ const AdminEditProduct = () => {
           category: product.category,
           brand: product.brand || '',
           stock: product.stock,
-          image: product.image
+          image: product.image,
+          originalPrice: product.originalPrice || '',
+          discount: product.discount || ''
         });
       }
     } catch (error) {
@@ -49,7 +56,17 @@ const AdminEditProduct = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, files } = e.target;
+    
+    if (type === 'file') {
+      const file = files[0];
+      if (file) {
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+      }
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -61,14 +78,36 @@ const AdminEditProduct = () => {
     setIsSubmitting(true);
 
     try {
-      const productData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        status: parseInt(formData.stock) > 0 ? 'active' : 'out_of_stock'
-      };
+      const parsedPrice = parseFloat(formData.price) || 0;
+      let parsedOriginalPrice = formData.originalPrice ? parseFloat(formData.originalPrice) : parsedPrice;
+      let parsedDiscount = formData.discount ? parseInt(formData.discount) : 0;
 
-      await apiService.products.update(id, productData);
+      if (parsedDiscount > 0 && parsedOriginalPrice === parsedPrice) {
+        parsedOriginalPrice = Math.round(parsedPrice / (1 - parsedDiscount / 100));
+      } else if (parsedOriginalPrice > parsedPrice && parsedDiscount === 0) {
+        parsedDiscount = Math.round(((parsedOriginalPrice - parsedPrice) / parsedOriginalPrice) * 100);
+      }
+
+      const form = new FormData();
+      form.append('name', formData.name);
+      form.append('description', formData.description);
+      form.append('price', parsedPrice);
+      form.append('category', formData.category);
+      form.append('brand', formData.brand);
+      form.append('stock', parseInt(formData.stock));
+      form.append('originalPrice', parsedOriginalPrice);
+      form.append('discount', parsedDiscount);
+      form.append('status', parseInt(formData.stock) > 0 ? 'active' : 'out_of_stock');
+
+      if (imageFile) {
+        form.append('image', imageFile);
+      } else if (formData.image) {
+        // If no new file is selected but there's an existing image URL, send it
+        // The backend expects 'images' field for URL strings in the body
+        form.append('images', formData.image); 
+      }
+
+      await apiService.products.update(id, form);
 
       alert('Product updated successfully!');
       navigate('/admin/products');
@@ -122,16 +161,9 @@ const AdminEditProduct = () => {
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="Electronics">Electronics</option>
-                <option value="Clothing">Clothing</option>
-                <option value="Home">Home & Garden</option>
-                <option value="Books">Books</option>
-                <option value="Sports">Sports & Outdoors</option>
-                <option value="Beauty">Beauty & Personal Care</option>
-                <option value="smartphones">Smartphones</option>
-                <option value="laptops">Laptops</option>
-                <option value="headphones">Headphones</option>
-                <option value="accessories">Accessories</option>
+                {PRODUCT_CATEGORIES.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
               </select>
             </div>
 
@@ -167,7 +199,7 @@ const AdminEditProduct = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price (₹) *
+                Selling Price (₹) *
               </label>
               <input
                 type="number"
@@ -178,6 +210,38 @@ const AdminEditProduct = () => {
                 min="0"
                 step="0.01"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Original Price (₹)
+              </label>
+              <input
+                type="number"
+                name="originalPrice"
+                value={formData.originalPrice}
+                onChange={handleInputChange}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0.00 (Optional, for deals)"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Discount (%)
+              </label>
+              <input
+                type="number"
+                name="discount"
+                value={formData.discount}
+                onChange={handleInputChange}
+                min="0"
+                max="100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0 (Optional)"
               />
             </div>
 
@@ -199,15 +263,27 @@ const AdminEditProduct = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Image URL
+              Product Image *
             </label>
-            <input
-              type="url"
-              name="image"
-              value={formData.image}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="mt-1 flex items-center space-x-5">
+              <div className="flex-shrink-0 h-32 w-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                {imagePreview || formData.image ? (
+                  <img src={imagePreview || formData.image} alt="Preview" className="h-full w-full object-contain" />
+                ) : (
+                  <span className="text-gray-400 text-xs text-center px-2">No image selected</span>
+                )}
+              </div>
+              <input
+                type="file"
+                name="image"
+                accept="image/*"
+                onChange={handleInputChange}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
+              />
+            </div>
+            {!imageFile && (
+              <p className="mt-1 text-xs text-gray-500 italic">Select a new file only if you want to replace the current image.</p>
+            )}
           </div>
 
           <div className="flex justify-end space-x-4 border-t pt-4">

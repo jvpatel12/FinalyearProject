@@ -10,7 +10,7 @@ export const CartContext = createContext();
  * Provides cart state and actions to the component tree
  */
 export function CartProvider({ children }) {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
 
   // Load initial state from localStorage
   const getInitialState = () => {
@@ -36,17 +36,26 @@ export function CartProvider({ children }) {
     }
   }, [state.items]);
 
+  // Clear cart if user logs out
+  useEffect(() => {
+    if (!loading && !user) {
+      dispatch({ type: 'CLEAR_CART' });
+    }
+  }, [user, loading]);
+
   // Calculate derived values
   const totalQuantity = state.items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  // Standardized logic: Tax 10%, Shipping ₹100, Free shipping over ₹1000
+  const tax = subtotal * 0.10;
+  const shipping = subtotal > 1000 ? 0 : (subtotal > 0 ? 100 : 0);
+  const grandTotal = subtotal + tax + shipping;
 
   // Action creators
   const addToCart = (item) => {
     if (!user) {
       alert("Please login to add items to cart.");
-      // Ideally we would redirect here, but we are outside the router context usually.
-      // Or we could return false to the caller.
-      // For now, simple alert is sufficient as per "Strict Auth" request.
       window.location.href = '/login';
       return;
     }
@@ -69,17 +78,20 @@ export function CartProvider({ children }) {
     dispatch({ type: 'CLEAR_CART' });
   };
 
-  // Memoize context value to prevent unnecessary re-renders
+  // Memoize context value
   const contextValue = useMemo(() => ({
     items: state.items,
     totalQuantity,
-    totalPrice,
+    subtotal,
+    tax,
+    shipping,
+    grandTotal,
     addToCart,
     increaseQty,
     decreaseQty,
     removeItem,
     clearCart,
-  }), [state.items, totalQuantity, totalPrice, user]); // Added user dependency
+  }), [state.items, totalQuantity, subtotal, tax, shipping, grandTotal, user]);
 
   return (
     <CartContext.Provider value={contextValue}>

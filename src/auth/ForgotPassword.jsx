@@ -53,9 +53,8 @@ const ForgotPassword = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center px-4 py-12">
       {/* Toast Notification */}
       {toast.show && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white animate-fade-in ${
-          toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white animate-fade-in ${toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          }`}>
           {toast.message}
         </div>
       )}
@@ -96,11 +95,10 @@ const ForgotPassword = () => {
                         setError('');
                       }}
                       placeholder="you@example.com"
-                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${
-                        error
+                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 ${error
                           ? 'border-red-500 focus:ring-red-200 bg-red-50'
                           : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
-                      }`}
+                        }`}
                     />
                     {error && (
                       <AlertCircle size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500" />

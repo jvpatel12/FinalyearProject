@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Button from '../common/Button';
 import { useAuth } from './useAuth';
@@ -57,7 +57,7 @@ const Login = () => {
       [name]: type === 'checkbox' ? checked : value,
     }));
     // Clear error for this field
-    if (errors[name]) {
+    if (errors[name]) { 
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
@@ -105,47 +105,49 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12 relative overflow-hidden">
+      {/* Background glowing effects */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+
       {/* Toast Notification */}
       {toast.show && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white animate-fade-in ${toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium animate-fade-in shadow-[0_0_20px_rgba(0,0,0,0.5)] border ${toast.type === 'success' ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-red-500/20 border-red-500/50 text-red-400'
           }`}>
           {toast.message}
         </div>
       )}
 
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">L</span>
+            <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.4)] border border-cyan-400/20">
+              <span className="text-white font-bold text-3xl tracking-tighter">L</span>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">LogiMart</h1>
-          <p className="text-gray-600">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">LogiMart</h1>
+          <p className="text-slate-400 font-light text-sm">Sign in to your account</p>
         </div>
 
         {/* Form Card */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] p-8 space-y-6">
           {/* Email Field */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-cyan-500 uppercase tracking-widest mb-2">
               Email Address
             </label>
             <div className="relative">
-              <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                className={`w-full pl-10 pr-4 py-2.5 border rounded-lg 
-    text-gray-900 placeholder-gray-400
-    focus:outline-none focus:ring-2 transition-all duration-300 ${errors.email
-                    ? 'border-red-500 focus:ring-red-200 bg-red-50'
-                    : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
+                className={`w-full pl-12 pr-4 py-3 bg-slate-900/50 border rounded-xl text-white placeholder-slate-600 outline-none transition-all duration-300 font-mono text-sm shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] ${errors.email
+                    ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/50 bg-red-500/5 text-red-400'
+                    : 'border-slate-700/50 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50'
                   }`}
               />
               {errors.email && (
@@ -157,48 +159,51 @@ const Login = () => {
 
           {/* Password Field */}
           <div>
-            <label className="block text-sm font-semibold text-black-700 mb-2">
+            <label className="block text-xs font-semibold text-cyan-500 uppercase tracking-widest mb-2">
               Password
             </label>
             <div className="relative">
-              <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-black-400" />
+              <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className={`w-full pl-10 pr-10 py-2.5 border rounded-lg 
-    text-gray-900 placeholder-gray-400
-    focus:outline-none focus:ring-2 transition-all duration-300 ${errors.password
-                    ? 'border-red-500 focus:ring-red-200 bg-red-50'
-                    : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
+                className={`w-full pl-12 pr-12 py-3 bg-slate-900/50 border rounded-xl text-white placeholder-slate-600 outline-none transition-all duration-300 font-mono text-sm shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] ${errors.password
+                    ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/50 bg-red-500/5 text-red-400'
+                    : 'border-slate-700/50 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50'
                   }`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 transition-colors"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
+            {errors.password && <p className="text-red-400 text-xs mt-2 font-medium">{errors.password}</p>}
           </div>
 
           {/* Remember Me & Forgot Password */}
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-                className="w-4 h-4 accent-blue-600 cursor-pointer"
-              />
-              <span className="text-sm text-gray-600">Remember me</span>
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <div className="relative flex items-center">
+                <input
+                  type="checkbox"
+                  name="rememberMe"
+                  checked={formData.rememberMe}
+                  onChange={handleChange}
+                  className="peer appearance-none w-4 h-4 rounded border border-slate-600 bg-slate-900/50 checked:bg-cyan-500/20 checked:border-cyan-500 cursor-pointer transition-all"
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity">
+                    <svg className="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                </div>
+              </div>
+              <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">Remember me</span>
             </label>
-            <a href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            <a href="/forgot-password" className="text-xs text-cyan-500 hover:text-cyan-400 hover:underline font-medium transition-colors">
               Forgot password?
             </a>
           </div>
@@ -207,58 +212,31 @@ const Login = () => {
           <Button
             variant="primary"
             size="lg"
-            className="w-full"
+            className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold border-none shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all rounded-xl py-3.5"
             disabled={loading}
             loading={loading}
             onClick={handleSubmit}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Authenticating...' : 'Sign In'}
           </Button>
 
-          {/* Social Login */}
+          {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+              <div className="w-full border-t border-slate-700/50"></div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-3 bg-[#0f172a] text-slate-500 font-medium tracking-wide uppercase">or connection</span>
             </div>
           </div>
-
-          {/* <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => showToast('Google login not yet configured')}
-              className="flex items-center justify-center gap-2 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300"
-            >
-              <span>Google</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => showToast('Facebook login not yet configured')}
-              className="flex items-center justify-center gap-2 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-300"
-            >
-              <span>Facebook</span>
-            </button>
-          </div> */}
 
           {/* Sign Up Link */}
-          <p className="text-center text-gray-600">
-            Don't have an account?{' '}
-            <a href="/signup" className="text-blue-600 hover:text-blue-700 font-semibold">
-              Sign up
-            </a>
+          <p className="text-center text-slate-400 text-sm">
+            Don't have clearance?{' '}
+            <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold hover:underline transition-colors">
+              Request access
+            </Link>
           </p>
-
-          {/* Demo Credentials Helper */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-xs font-semibold text-gray-700 mb-2">Demo Credentials:</p>
-            <div className="text-xs text-gray-600 space-y-1">
-              <p><strong>Customer:</strong> customer@example.com / customer123</p>
-              <p><strong>Admin:</strong> admin@logimart.com / admin123</p>
-              <p><strong>Seller:</strong> seller@techstore.com / seller123</p>
-            </div>
-          </div>
         </form>
       </div>
     </div>

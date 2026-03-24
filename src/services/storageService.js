@@ -1,5 +1,5 @@
 
-import { products as initialProducts, categories as initialCategories, users as initialUsers, orders as initialOrders } from '../products/productsData';
+import { categories as initialCategories, users as initialUsers, orders as initialOrders } from '../products/productsData';
 import { userCredentials } from '../auth/authService';
 
 const KEYS = {
@@ -59,7 +59,7 @@ const storageService = {
         }
 
         if (!localStorage.getItem(KEYS.PRODUCTS)) {
-            localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(initialProducts));
+            localStorage.setItem(KEYS.PRODUCTS, JSON.stringify([]));
         }
 
         if (!localStorage.getItem(KEYS.ORDERS)) {
@@ -96,6 +96,9 @@ const storageService = {
 
     getOrders: () => storageService.get(KEYS.ORDERS) || [],
     saveOrders: (orders) => storageService.set(KEYS.ORDERS, orders),
+
+    getCategories: () => storageService.get(KEYS.CATEGORIES) || [],
+    saveCategories: (categories) => storageService.set(KEYS.CATEGORIES, categories),
 
     getKeys: () => KEYS
 };

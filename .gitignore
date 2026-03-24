@@ -26,3 +26,7 @@ lint_log.txt
 build_error*.log
 tree.txt
 
+# Docs
+docs/
+API_DOCUMENTATION.md
+TEST_CREDENTIALS.md

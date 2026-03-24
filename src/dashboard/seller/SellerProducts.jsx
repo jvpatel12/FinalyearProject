@@ -21,9 +21,8 @@ const SellerProducts = () => {
   const fetchProducts = async () => {
     if (!user?.id) return;
     try {
-      const allProducts = await apiService.products.getAll();
-      // Filter for this seller
-      const myProducts = allProducts.filter(p => p.sellerId === user.id);
+      // Use dedicated API method
+      const myProducts = await apiService.products.getBySeller(user.id);
       setProducts(myProducts);
     } catch (error) {
       console.error("Failed to fetch products:", error);

@@ -21,6 +21,7 @@ const SellerDashboard = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      console.log("fetach dashboard is running")
       if (!user?.id) return;
 
       try {
@@ -66,6 +67,8 @@ const SellerDashboard = () => {
     };
 
     fetchDashboardData();
+
+
   }, [user]);
 
   const statCards = [
@@ -172,7 +175,7 @@ const SellerDashboard = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₹{order.total.toLocaleString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-bold rounded-full ${order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
                         }`}>
                         {order.status.toUpperCase()}
                       </span>

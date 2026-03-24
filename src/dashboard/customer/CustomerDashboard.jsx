@@ -178,10 +178,10 @@ const CustomerDashboard = () => {
                       #{order.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                      {order.items?.length ?? 0} item{(order.items?.length ?? 0) !== 1 ? 's' : ''}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ₹{order.total.toLocaleString()}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      ${order.amount?.toLocaleString() ?? '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-bold rounded-full ${getStatusColor(order.status)}`}>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
 /**
@@ -6,6 +7,7 @@ import { Users, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown } fr
  * Overview of key metrics and recent activity
  */
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   // Mock data for admin dashboard
   const stats = [
     {
@@ -43,11 +45,11 @@ const AdminDashboard = () => {
   ];
 
   const recentOrders = [
-    { id: 'ORD-001', userName: 'John Doe', total: 2999, status: 'delivered', date: '2024-01-15' },
-    { id: 'ORD-002', userName: 'Jane Smith', total: 1599, status: 'shipped', date: '2024-01-14' },
-    { id: 'ORD-003', userName: 'Bob Johnson', total: 4599, status: 'processing', date: '2024-01-13' },
-    { id: 'ORD-004', userName: 'Alice Brown', total: 899, status: 'placed', date: '2024-01-12' },
-    { id: 'ORD-005', userName: 'Charlie Wilson', total: 2399, status: 'delivered', date: '2024-01-11' },
+    { id: 'ORD-001', userName: 'Amit Kumar', total: 2999, status: 'delivered', date: '2024-01-15' },
+    { id: 'ORD-002', userName: 'Jeel Patel', total: 1599, status: 'shipped', date: '2024-01-14' },
+    { id: 'ORD-003', userName: 'Ayush Singh', total: 4599, status: 'processing', date: '2024-01-13' },
+    { id: 'ORD-004', userName: 'Patel Brothers', total: 899, status: 'placed', date: '2024-01-12' },
+    { id: 'ORD-005', userName: 'Jeel Patel', total: 2399, status: 'delivered', date: '2024-01-11' },
   ];
 
   const formatDate = (dateString) => {
@@ -110,9 +112,8 @@ const AdminDashboard = () => {
                     ) : (
                       <TrendingDown size={14} className="text-red-500 mr-1" />
                     )}
-                    <span className={`text-sm font-medium ${
-                      stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                    <span className={`text-sm font-medium ${stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                      }`}>
                       {stat.change}
                     </span>
                     <span className="text-sm text-gray-600 ml-1">vs last month</span>
@@ -184,17 +185,26 @@ const AdminDashboard = () => {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+          <button
+            onClick={() => navigate('/admin/products/add')}
+            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+          >
             <Package size={24} className="text-blue-600 mb-2" />
             <h4 className="font-medium text-gray-900">Add New Product</h4>
             <p className="text-sm text-gray-600">Create a new product listing</p>
           </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+          <button
+            onClick={() => navigate('/admin/users')}
+            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+          >
             <Users size={24} className="text-green-600 mb-2" />
             <h4 className="font-medium text-gray-900">Manage Users</h4>
             <p className="text-sm text-gray-600">View and manage user accounts</p>
           </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+          <button
+            onClick={() => navigate('/admin/orders')}
+            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+          >
             <ShoppingCart size={24} className="text-orange-600 mb-2" />
             <h4 className="font-medium text-gray-900">Process Orders</h4>
             <p className="text-sm text-gray-600">Handle pending orders</p>

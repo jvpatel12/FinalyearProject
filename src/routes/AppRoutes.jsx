@@ -15,6 +15,7 @@ import AccountSettingsPage from "../dashboard/customer/AccountSettingsPage";
 import ProductDetailPage from "../products/ProductDetailPage";
 import ShoppingCartPage from "../cart/ShoppingCartPage";
 import CheckoutPage from "../cart/CheckoutPage";
+import WishlistPage from "../dashboard/customer/WishlistPage";
 import AdminLayout from "../layouts/AdminLayout";
 import AdminDashboard from "../dashboard/admin/AdminDashboard";
 import AdminProducts from "../dashboard/admin/AdminProducts";
@@ -28,8 +29,15 @@ import SellerProducts from "../dashboard/seller/SellerProducts";
 import SellerOrders from "../dashboard/seller/SellerOrders";
 import SellerEarnings from "../dashboard/seller/SellerEarnings";
 import AddProduct from "../dashboard/seller/AddProduct";
+import SellerProfile from "../dashboard/seller/SellerProfile";
+import SellerReviews from "../dashboard/seller/SellerReviews";
 import AdminCategories from "../dashboard/admin/AdminCategories";
+import AdminSellers from "../dashboard/admin/AdminSellers";
+import AdminCoupons from "../dashboard/admin/AdminCoupons";
+import AdminSettings from "../dashboard/admin/AdminSettings";
 import CustomerDashboard from "../dashboard/customer/CustomerDashboard";
+import Deals from "../Pages/Deals";
+import NewArrivals from "../Pages/NewArrivals";
 
 const router = createBrowserRouter([
   {
@@ -45,8 +53,8 @@ const router = createBrowserRouter([
       { path: "cart", element: <ShoppingCartPage /> },
       { path: "product/:id", element: <ProductDetailPage /> },
       // Add routes for all missing pages
-      { path: "deals", element: <div>Deals page coming soon</div> },
-      { path: "new", element: <div>New arrivals page coming soon</div> },
+      { path: "deals", element: <Deals /> },
+      { path: "new", element: <NewArrivals /> },
       { path: "bestsellers", element: <div>Bestsellers page coming soon</div> },
       { path: "about", element: <div>About us page coming soon</div> },
       { path: "careers", element: <div>Careers page coming soon</div> },
@@ -92,52 +100,65 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: "wishlist",
+        element: (
+          <ProtectedRoute>
+            <WishlistPage />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
-  // {
-  //   path: "/customer",
-  //   element: (
-  //     <ProtectedRoute requiredRole="customer">
-  //       <Layout />
-  //     </ProtectedRoute>
-  //   ),
-  //   children: [
-  //     { index: true, element: <CustomerDashboard /> },
-  //   ],
-  // },
   {
-    path:"/admin",
+    path: "/customer",
     element: (
-    <ProtectedRoute requiredRole="admin">
+      <ProtectedRoute requiredRole="customer">
+        <Layout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <CustomerDashboard /> },
+    ],
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute requiredRole="admin">
         <AdminLayout />
       </ProtectedRoute>
     ),
     children: [
-      { index:"/admin", element: <AdminDashboard /> },
+      { index: "/admin", element: <AdminDashboard /> },
       { path: "products", element: <AdminProducts /> },
       { path: "products/add", element: <AdminAddProduct /> },
       { path: "products/edit/:id", element: <AdminEditProduct /> },
       { path: "categories", element: <AdminCategories /> },
       { path: "users", element: <AdminUsers /> },
+      { path: "sellers", element: <AdminSellers /> },
       { path: "orders", element: <AdminOrders /> },
+      { path: "coupons", element: <AdminCoupons /> },
+      { path: "settings", element: <AdminSettings /> },
     ],
   },
-  // {
-  //   path: "/seller",
-  //   element: (
-  //     <ProtectedRoute requiredRole="seller">
-  //       <SellerLayout />
-  //     </ProtectedRoute>
-  //   ),
-  //   children: [
-  //     { index: true, element: <SellerDashboard /> },
-  //     { path: "products", element: <SellerProducts /> },
-  //     { path: "add-product", element: <AddProduct /> },
-  //     { path: "edit-product/:id", element: <AddProduct /> },
-  //     { path: "orders", element: <SellerOrders /> },
-  //     { path: "earnings", element: <SellerEarnings /> },
-  //   ],
-  // },
+  {
+    path: "/seller",
+    element: (
+      <ProtectedRoute requiredRole="seller">
+        <SellerLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <SellerDashboard /> },
+      { path: "products", element: <SellerProducts /> },
+      { path: "add-product", element: <AddProduct /> },
+      { path: "edit-product/:id", element: <AddProduct /> },
+      { path: "orders", element: <SellerOrders /> },
+      { path: "earnings", element: <SellerEarnings /> },
+      { path: "settings", element: <SellerProfile /> },
+      { path: "reviews", element: <SellerReviews /> },
+    ],
+  },
 ]);
 
 export default router;

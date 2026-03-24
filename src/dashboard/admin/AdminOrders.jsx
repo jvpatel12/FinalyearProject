@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Eye, Truck, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react';
+import { Package, Eye, Truck, CheckCircle, XCircle, Clock, Search, Filter, Trash2 } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 
 /**
@@ -38,6 +38,17 @@ const AdminOrders = () => {
     }
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to permanently delete this order?")) return;
+    try {
+      await apiService.orders.delete(orderId);
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+    } catch (error) {
+      console.error("Failed to delete order:", error);
+      alert("Failed to delete order");
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesFilter = filter === 'all' || order.status === filter;
     const matchesSearch =
@@ -65,6 +76,13 @@ const AdminOrders = () => {
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getOrderName = (order) => {
+    const items = order.items || order.orderItems || [];
+    if (items.length === 0) return 'Unknown Items';
+    if (items.length === 1) return items[0].name;
+    return `${items[0].name} +${items.length - 1} more`;
   };
 
   return (
@@ -120,12 +138,17 @@ const AdminOrders = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">#{order.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-gray-900">#{order.id}</div>
+                      <div className="text-xs text-gray-500 font-normal truncate max-w-[200px]" title={getOrderName(order)}>
+                        {getOrderName(order)}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{order.userName}</div>
                       <div className="text-xs text-gray-500">{order.userEmail}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₹{order.total.toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₹{order.total?.toLocaleString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${getStatusColor(order.status)}`}>
@@ -162,6 +185,13 @@ const AdminOrders = () => {
                             Cancel
                           </button>
                         )}
+                        <button
+                          onClick={() => handleDeleteOrder(order.id)}
+                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded items-center flex"
+                          title="Delete Order"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>

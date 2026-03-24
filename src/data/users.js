@@ -11,15 +11,15 @@ export const userCredentials = [
     password: 'customer123',
     role: 'customer',
     userId: 1,
-    name: 'John Doe',
+    name: 'Jeel',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80'
   },
   {
-    email: 'jane@example.com',
+    email: 'Jeel@example.com',
     password: 'customer123',
     role: 'customer',
     userId: 2,
-    name: 'Jane Smith',
+    name: 'Patel Jeel',
     avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&q=80'
   },
   
