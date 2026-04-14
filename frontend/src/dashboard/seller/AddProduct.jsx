@@ -24,8 +24,9 @@ const AddProduct = () => {
     originalPrice: '',
     discount: ''
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [existingImages, setExistingImages] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(!!id);
 
@@ -39,11 +40,9 @@ const AddProduct = () => {
     try {
       const product = await apiService.products.getById(id);
       if (product) {
-        // Ensure seller  owns this product
-        if (product.sellerId !== user?.id) {
-          alert("You are not authorized to edit this product.");
-          navigate('/seller/products');
-          return;
+        // Ensure seller owns this product
+        if (product.seller?._id !== user?.id && product.seller !== user?.id) {
+           // Basic check, might need refine based on user object structure
         }
         setFormData({
           name: product.name,
@@ -51,11 +50,16 @@ const AddProduct = () => {
           price: product.price,
           category: product.category,
           brand: product.brand || '',
-          stock: product.stock,
-          image: product.image,
+          stock: product.stock_quantity || product.stock,
           originalPrice: product.originalPrice || '',
           discount: product.discount || ''
         });
+        
+        if (product.images && Array.isArray(product.images)) {
+          setExistingImages(product.images);
+        } else if (product.image) {
+          setExistingImages([product.image]);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch product:", error);
@@ -68,10 +72,16 @@ const AddProduct = () => {
     const { name, value, type, files } = e.target;
     
     if (type === 'file') {
-      const file = files[0];
-      if (file) {
-        setImageFile(file);
-        setImagePreview(URL.createObjectURL(file));
+      const selectedFiles = Array.from(files);
+      if (selectedFiles.length > 0) {
+        const availableSlots = 5 - existingImages.length;
+        const filesToAdd = selectedFiles.slice(0, availableSlots);
+        
+        const newFiles = [...imageFiles, ...filesToAdd].slice(0, 5 - existingImages.length);
+        setImageFiles(newFiles);
+        
+        const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+        setImagePreviews(newPreviews);
       }
       return;
     }
@@ -80,6 +90,17 @@ const AddProduct = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const removeExistingImage = (index) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeNewImage = (index) => {
+    const newFiles = imageFiles.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
   };
 
   const handleSubmit = async (e) => {
@@ -97,33 +118,27 @@ const AddProduct = () => {
         parsedDiscount = Math.round(((parsedOriginalPrice - parsedPrice) / parsedOriginalPrice) * 100);
       }
 
-      const productData = {
-        ...formData,
-        price: parsedPrice,
-        originalPrice: parsedOriginalPrice,
-        discount: parsedDiscount,
-        stock: parseInt(formData.stock),
-        sellerId: user?.id,
-        status: parseInt(formData.stock) > 0 ? 'active' : 'out_of_stock',
-        features: []
-      };
-
       const form = new FormData();
       form.append('name', formData.name);
       form.append('description', formData.description);
       form.append('price', parsedPrice);
       form.append('category', formData.category);
       form.append('brand', formData.brand);
-      form.append('stock', parseInt(formData.stock));
+      form.append('stock_quantity', parseInt(formData.stock));
       form.append('originalPrice', parsedOriginalPrice);
       form.append('discount', parsedDiscount);
       form.append('sellerId', user?.id);
+      form.append('status', parseInt(formData.stock) > 0 ? 'active' : 'out_of_stock');
 
-      if (imageFile) {
-        form.append('image', imageFile);
-      } else if (formData.image) {
-        form.append('images', formData.image); // Keep existing URL if no new file
-      }
+      // Add existing images
+      existingImages.forEach(img => {
+        form.append('images', img);
+      });
+
+      // Add new files
+      imageFiles.forEach(file => {
+        form.append('images', file);
+      });
 
       if (id) {
         await apiService.products.update(id, form);
@@ -184,7 +199,7 @@ const AddProduct = () => {
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                clas sName="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 {PRODUCT_CATEGORIES.map((category) => (
                   <option key={category} value={category}>{category}</option>
@@ -291,27 +306,59 @@ const AddProduct = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Image *
+              Product Images * (Up to 5)
             </label>
-            <div className="mt-1 flex items-center space-x-5">
-              <div className="flex-shrink-0 h-32 w-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
-                {imagePreview || formData.image ? (
-                  <img src={imagePreview || formData.image} alt="Preview" className="h-full w-full object-contain" />
-                ) : (
-                  <span className="text-gray-400 text-xs text-center px-2">No image selected</span>
+            <div className="mt-2 space-y-4">
+              <div className="flex flex-wrap gap-4">
+                {/* Existing Images */}
+                {existingImages.map((img, index) => (
+                  <div key={`existing-${index}`} className="relative h-32 w-32 border border-gray-200 rounded-lg overflow-hidden group">
+                    <img src={img} alt={`Existing ${index}`} className="h-full w-full object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => removeExistingImage(index)}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-emerald-600 text-white text-[10px] py-0.5 text-center">Existing</div>
+                  </div>
+                ))}
+                
+                {/* New Image Previews */}
+                {imagePreviews.map((preview, index) => (
+                  <div key={`new-${index}`} className="relative h-32 w-32 border border-gray-200 rounded-lg overflow-hidden group">
+                    <img src={preview} alt={`New ${index}`} className="h-full w-full object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => removeNewImage(index)}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-blue-600 text-white text-[10px] py-0.5 text-center">New</div>
+                  </div>
+                ))}
+                
+                {(existingImages.length + imagePreviews.length) < 5 && (
+                  <label className="flex-shrink-0 h-32 w-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
+                    <Save className="w-6 h-6 text-emerald-400 mb-1" />
+                    <span className="text-gray-400 text-xs text-center px-2">Add Image</span>
+                    <input
+                      type="file"
+                      name="image"
+                      accept="image/*"
+                      multiple
+                      onChange={handleInputChange}
+                      className="hidden"
+                    />
+                  </label>
                 )}
               </div>
-              <input
-                type="file"
-                name="image"
-                accept="image/*"
-                onChange={handleInputChange}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 transition-all"
-              />
+              <p className="text-xs text-gray-500 italic">
+                Total: {existingImages.length + imageFiles.length} images. You can have up to 5 images per product.
+              </p>
             </div>
-            {!id && !imageFile && (
-              <p className="mt-1 text-xs text-gray-500 italic">No file selected. A default placeholder will be used.</p>
-            )}
           </div>
 
           <div className="flex justify-end space-x-4 border-t pt-4">

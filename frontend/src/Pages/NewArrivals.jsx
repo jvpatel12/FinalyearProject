@@ -123,7 +123,7 @@ const NewArrivals = () => {
                                     <Sparkles size={12} /> NEW
                                 </div>
                                 <img
-                                    src={product.image}
+                                    src={product.images && product.images.length > 0 ? product.images[0] : '/images/sample.jpg'}
                                     alt={product.name}
                                     className={`w-full ${viewMode === 'list' ? 'h-full' : 'h-full'} object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-700 relative z-10`}
                                 />

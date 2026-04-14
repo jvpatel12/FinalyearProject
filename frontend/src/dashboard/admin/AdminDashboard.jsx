@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { Users, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
+import { apiService } from '../../services/apiService';
 
 /**
  * Admin Dashboard Component
@@ -8,49 +9,70 @@ import { Users, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown } fr
  */
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  // Mock data for admin dashboard
-  const stats = [
-    {
-      title: 'Total Sales',
-      value: '₹1,24,599',
-      icon: DollarSign,
-      color: 'bg-green-500',
-      change: '+12.5%',
-      changeType: 'positive'
-    },
-    {
-      title: 'Total Orders',
-      value: '1,247',
-      icon: ShoppingCart,
-      color: 'bg-blue-500',
-      change: '+8.2%',
-      changeType: 'positive'
-    },
-    {
-      title: 'Total Users',
-      value: '5,678',
-      icon: Users,
-      color: 'bg-purple-500',
-      change: '+15.3%',
-      changeType: 'positive'
-    },
-    {
-      title: 'Total Products',
-      value: '892',
-      icon: Package,
-      color: 'bg-orange-500',
-      change: '+5.1%',
-      changeType: 'positive'
-    }
-  ];
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
 
-  const recentOrders = [
-    { id: 'ORD-001', userName: 'Amit Kumar', total: 2999, status: 'delivered', date: '2024-01-15' },
-    { id: 'ORD-002', userName: 'Jeel Patel', total: 1599, status: 'shipped', date: '2024-01-14' },
-    { id: 'ORD-003', userName: 'Ayush Singh', total: 4599, status: 'processing', date: '2024-01-13' },
-    { id: 'ORD-004', userName: 'Patel Brothers', total: 899, status: 'placed', date: '2024-01-12' },
-    { id: 'ORD-005', userName: 'Jeel Patel', total: 2399, status: 'delivered', date: '2024-01-11' },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        // Fetch Admin Stats
+        const adminStats = await apiService.users.getAdminStats();
+
+        // Fetch All Orders for Recent Orders section
+        const allOrders = await apiService.orders.getAll();
+        const sortedOrders = [...allOrders]
+          .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+          .slice(0, 5);
+
+        // Map stats to display format
+        const statsData = [
+          {
+            title: 'Total Revenue',
+            value: `₹${(adminStats.revenue || 0).toLocaleString()}`,
+            icon: DollarSign,
+            color: 'bg-green-500',
+            change: '+12.5%',
+            changeType: 'positive'
+          },
+          {
+            title: 'Total Orders',
+            value: (adminStats.orders || 0).toLocaleString(),
+            icon: ShoppingCart,
+            color: 'bg-blue-500',
+            change: '+8.2%',
+            changeType: 'positive'
+          },
+          {
+            title: 'Total Users',
+            value: (adminStats.users || 0).toLocaleString(),
+            icon: Users,
+            color: 'bg-purple-500',
+            change: '+15.3%',
+            changeType: 'positive'
+          },
+          {
+            title: 'Active Products',
+            value: (adminStats.products || 0).toLocaleString(),
+            icon: Package,
+            color: 'bg-orange-500',
+            change: '+5.1%',
+            changeType: 'positive'
+          }
+        ];
+
+        setStats(statsData);
+        setRecentOrders(sortedOrders);
+      } catch (error) {
+        console.error("Failed to fetch admin dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
@@ -61,7 +83,8 @@ const AdminDashboard = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const s = status ? status.toLowerCase() : '';
+    switch (s) {
       case 'placed':
         return 'bg-blue-100 text-blue-800';
       case 'processing':
@@ -74,6 +97,15 @@ const AdminDashboard = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
+        <p className="text-gray-600 font-medium">Loading dashboard data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -155,27 +187,33 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {recentOrders.map((order) => (
+              {recentOrders.length > 0 ? recentOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{order.id}
+                    #{order.id.substring(order.id.length - 8).toUpperCase()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {order.userName}
+                    {order.user?.name || 'Guest User'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     ₹{order.total.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}>
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      {(order.status || 'unknown').toUpperCase()}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(order.date)}
+                    {formatDate(order.date || order.createdAt)}
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                    No orders recorded in the matrix yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

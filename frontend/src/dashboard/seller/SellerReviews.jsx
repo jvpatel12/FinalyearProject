@@ -1,21 +1,40 @@
 import React, { useState } from 'react';
-import { Star, MessageCircle, Reply } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { apiService } from '../../services/apiService';
+import { MessageCircle, Star, Reply } from 'lucide-react';
 
 const SellerReviews = () => {
-    // Mock reviews data
-    const [reviews, setReviews] = useState([
-        { id: 1, customer: 'Jeel Patel', rating: 5, date: '2024-02-10', comment: 'Great product, fast shipping!', product: 'Wireless Earbuds', reply: '' },
-        { id: 2, customer: 'Patel', rating: 3, date: '2024-02-08', comment: 'Average quality, expected better.', product: 'Smart Watch', reply: '' },
-        { id: 3, customer: 'Amit', rating: 4, date: '2024-02-05', comment: 'Good value for money.', product: 'Laptop Stand', reply: 'Thank you for your feedback!' },
-    ]);
-
+    const [reviews, setReviews] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [replyText, setReplyText] = useState('');
     const [activeReplyId, setActiveReplyId] = useState(null);
 
-    const handleReplySubmit = (id) => {
-        setReviews(prev => prev.map(r => r.id === id ? { ...r, reply: replyText } : r));
-        setReplyText('');
-        setActiveReplyId(null);
+    const fetchReviews = async () => {
+        try {
+            setLoading(true);
+            const data = await apiService.reviews.getSellerReviews();
+            setReviews(data);
+        } catch (error) {
+            toast.error('Failed to fetch reviews');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    React.useEffect(() => {
+        fetchReviews();
+    }, []);
+
+    const handleReplySubmit = async (id) => {
+        try {
+            await apiService.reviews.replyToReview(id, replyText);
+            toast.success('Reply posted successfully');
+            setReplyText('');
+            setActiveReplyId(null);
+            fetchReviews(); // Refresh
+        } catch (error) {
+            toast.error('Failed to post reply');
+        }
     };
 
     return (
@@ -26,18 +45,26 @@ const SellerReviews = () => {
             </h1>
 
             <div className="grid gap-6">
-                {reviews.map(review => (
+                {loading ? (
+                    <div className="text-center py-10">Loading reviews...</div>
+                ) : reviews.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500">No reviews found.</div>
+                ) : reviews.map(review => (
                     <div key={review.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h3 className="font-semibold text-gray-900">{review.product}</h3>
+                                <h3 className="font-semibold text-gray-900">
+                                    {review.product?.name || 'Deleted Product'}
+                                </h3>
                                 <div className="flex items-center gap-2 mt-1">
                                     <div className="flex text-yellow-400">
                                         {[...Array(5)].map((_, i) => (
                                             <Star key={i} size={16} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "" : "text-gray-300"} />
                                         ))}
                                     </div>
-                                    <span className="text-sm text-gray-500">by {review.customer} on {review.date}</span>
+                                    <span className="text-sm text-gray-500">
+                                        by {review.name || review.user?.name || 'Anonymous'} on {new Date(review.createdAt).toLocaleDateString()}
+                                    </span>
                                 </div>
                             </div>
                         </div>

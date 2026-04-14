@@ -102,7 +102,7 @@ const AddressManagement = ({ onSelectAddress, selectedAddressId, selectable = fa
             <div className="flex justify-between items-center mb-8">
                 <h2 className="text-xl font-bold text-white flex items-center gap-3 tracking-tight">
                     <MapPin className="w-5 h-5 text-cyan-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
-                    Coordinate Directory
+                    Stored Locations
                 </h2>
                 {!isAdding && (
                     <button
@@ -110,7 +110,7 @@ const AddressManagement = ({ onSelectAddress, selectedAddressId, selectable = fa
                         className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-900 bg-cyan-500 hover:bg-cyan-400 px-5 py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.5)]"
                     >
                         <Plus className="w-4 h-4" />
-                        Add Node
+                        Add New Node
                     </button>
                 )}
             </div>
@@ -119,7 +119,7 @@ const AddressManagement = ({ onSelectAddress, selectedAddressId, selectable = fa
                 <form onSubmit={handleSubmit} className="space-y-5 mb-8 bg-slate-900/50 p-6 md:p-8 rounded-2xl border border-slate-700/50 shadow-[inset_0_2px_15px_rgba(0,0,0,0.2)]">
                     <h3 className="font-bold text-cyan-500 uppercase tracking-widest text-sm mb-6 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                        {editingId ? 'Reconfigure Coordinates' : 'Establish New Coordinates'}
+                        {editingId ? 'Edit Location Data' : 'Initialize New Location'}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <input
@@ -243,13 +243,13 @@ const AddressManagement = ({ onSelectAddress, selectedAddressId, selectable = fa
                                         onClick={(e) => { e.stopPropagation(); handleEdit(addr); }}
                                         className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-400 bg-slate-800/50 hover:text-cyan-400 py-2.5 rounded-xl hover:bg-slate-800 transition-all border border-slate-700/50 hover:border-cyan-500/30"
                                     >
-                                        <Edit2 className="w-3.5 h-3.5" /> Reconfigure
+                                        <Edit2 className="w-3.5 h-3.5" /> Edit
                                     </button>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleDelete(addr.id); }}
                                         className="flex-1 flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-400 bg-slate-800/50 hover:text-red-400 py-2.5 rounded-xl hover:bg-red-500/10 transition-all border border-slate-700/50 hover:border-red-500/30"
                                     >
-                                        <Trash2 className="w-3.5 h-3.5" /> Terminate
+                                        <Trash2 className="w-3.5 h-3.5" /> Delete
                                     </button>
                                 </div>
                             )}

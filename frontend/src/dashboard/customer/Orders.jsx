@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Eye, Truck, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Package, Eye, Truck, CheckCircle, XCircle, Clock, Check } from 'lucide-react';
 import { useAuth } from '../../auth/useAuth';
 import { apiService } from '../../services/apiService';
+import { io } from 'socket.io-client';
 
 /**
  * Orders Page Component
@@ -30,13 +31,44 @@ const Orders = () => {
     fetchOrders();
   }, [user]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Connect to Socket.io server
+    const socket = io('http://localhost:5000', {
+      withCredentials: true
+    });
+
+    socket.emit('joinRoom', `user_${user.id}`);
+
+    socket.on('orderStatusUpdated', (data) => {
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === data.orderId 
+            ? { ...order, status: data.status } 
+            : order
+        )
+      );
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
+
   const getStatusIcon = (status) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case 'delivered':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'out for delivery':
+        return <Truck className="w-5 h-5 text-teal-500" />;
       case 'shipped':
         return <Truck className="w-5 h-5 text-blue-500" />;
+      case 'confirmed':
+        return <Check className="w-5 h-5 text-indigo-500" />;
       case 'processing':
+      case 'pending':
         return <Clock className="w-5 h-5 text-orange-500" />;
       case 'cancelled':
         return <XCircle className="w-5 h-5 text-red-500" />;
@@ -46,12 +78,18 @@ const Orders = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case 'delivered':
         return 'bg-green-100 text-green-800';
+      case 'out for delivery':
+        return 'bg-teal-100 text-teal-800';
       case 'shipped':
         return 'bg-blue-100 text-blue-800';
+      case 'confirmed':
+        return 'bg-indigo-100 text-indigo-800';
       case 'processing':
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';

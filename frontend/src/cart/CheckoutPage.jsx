@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CreditCard, Truck, Shield, ArrowLeft } from 'lucide-react';
-import { useAuth } from '../auth/useAuth';
-import { useCart } from './CartContext.jsx';
+import { toast } from 'react-hot-toast';
+import { useAuth } from '../auth/AuthContext';
+import { useCart } from './CartContext';
 import { apiService } from '../services/apiService';
+import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Shield, ArrowLeft, CreditCard, Truck } from 'lucide-react';
 import AddressManagement from '../dashboard/customer/AddressManagement';
 
-/**
- * Checkout Page Component
- * Handles order placement with customer details and payment
- */
+const loadScript = (src) => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => {
+      resolve(true);
+    };
+    script.onerror = () => {
+      resolve(false);
+    };
+    document.body.appendChild(script);
+  });
+};
+
+
 const CheckoutPage = () => {
   const { user } = useAuth();
   const { items: cartItems, clearCart, subtotal, tax, shipping, grandTotal } = useCart();
@@ -43,7 +55,7 @@ const CheckoutPage = () => {
 
     try {
       const orderData = {
-        userId: user?.id || user?.userId, // Handle difference in mock data structure
+        userId: user?.id || user?.userId,
         userName: `${formData.firstName} ${formData.lastName}`,
         userEmail: formData.email,
         items: cartItems.map(item => ({
@@ -52,30 +64,91 @@ const CheckoutPage = () => {
           price: item.price,
           quantity: item.quantity,
           image: item.image,
-          sellerId: item.sellerId || 1 // Default to admin/seller 1 if missing
+          sellerId: item.sellerId || 1
         })),
         total: grandTotal,
         shippingAddress: {
           address: formData.address,
           city: formData.city,
           postalCode: formData.zipCode,
-          country: formData.state || 'IN', // Backend requires country, using state as fallback or default
+          country: formData.state || 'IN',
         },
         paymentMethod: formData.paymentMethod
       };
 
-      await apiService.orders.placeOrder(orderData);
+      const createdOrder = await apiService.orders.placeOrder(orderData);
+      const orderId = createdOrder.id || createdOrder._id;
 
-      alert('Order placed successfully!');
-      clearCart();
-      // Use window.location as force refresh might be good to see new orders, but navigate is better SPA
-      // navigate('/orders') is fine if Orders page fetches data on mount
-      navigate('/orders');
+      if (formData.paymentMethod === 'cod') {
+        toast.success('Order placed successfully (Cash on Delivery)!');
+        clearCart();
+        navigate('/orders');
+        return;
+      }
+
+      // Handle Razorpay
+      toast.loading('Initializing Payment Securely...', { id: 'checkout' });
+      const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+      if (!res) {
+        toast.error('Razorpay SDK failed to load. Check your connection.', { id: 'checkout' });
+        setIsProcessing(false);
+        return;
+      }
+
+      // generate razorpay order
+      const rpOrder = await apiService.orders.createRazorpayOrder(orderId);
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'dummy_key',
+        amount: rpOrder.amount,
+        currency: rpOrder.currency,
+        name: "CyberStore",
+        description: `Order #${orderId}`,
+        order_id: rpOrder.id,
+        handler: async function (response) {
+          try {
+            toast.loading('Verifying Payment Encryption...', { id: 'checkout' });
+            await apiService.orders.verifyRazorpayPayment(orderId, {
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature
+            });
+            toast.success('Payment Verified & Order Confirmed!', { id: 'checkout' });
+            clearCart();
+            setTimeout(() => navigate('/orders'), 2000);
+          } catch (err) {
+            console.error(err);
+            toast.error('Payment Verification Failed!', { id: 'checkout' });
+            navigate('/orders');
+          }
+        },
+        prefill: {
+          name: formData.firstName + " " + formData.lastName,
+          email: formData.email,
+          contact: formData.phone
+        },
+        theme: {
+          color: "#06b6d4"
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+            toast.dismiss('checkout');
+          }
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.on('payment.failed', function (response) {
+        toast.error('Payment Failed: ' + response.error.description, { id: 'checkout' });
+        setIsProcessing(false);
+      });
+      toast.dismiss('checkout');
+      paymentObject.open();
 
     } catch (error) {
       console.error('Checkout failed:', error);
-      alert(error.message || 'Failed to place order. Please try again.');
-    } finally {
+      toast.error(error.response?.data?.message || 'Failed to place order. Please try again.', { id: 'checkout' });
       setIsProcessing(false);
     }
   };

@@ -1,17 +1,36 @@
 import React, { useState } from 'react';
-import { Search, UserCheck, UserX, MoreVertical, Shield } from 'lucide-react';
-
+import { toast } from 'react-hot-toast';
+import { apiService } from '../../services/apiService';
+import { Shield, Search, UserCheck, UserX } from 'lucide-react';
 const AdminSellers = () => {
-    // Mock data for sellers
-    const [sellers, setSellers] = useState([
-        { id: 1, name: 'TechWorld', owner: 'Jeel Patel', email: 'jeel@techworld.com', status: 'Active', sales: 120, rating: 4.5 },
-        { id: 2, name: 'FashionHub', owner: 'Patel', email: 'patel@fashionhub.com', status: 'Pending', sales: 0, rating: 0 },
-        { id: 3, name: 'HomeDecor', owner: 'Amit', email: 'amit@homedecor.com', status: 'Suspended', sales: 45, rating: 3.8 },
-    ]);
+    const [sellers, setSellers] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const handleStatusChange = (id, newStatus) => {
-        setSellers(prev => prev.map(seller => seller.id === id ? { ...seller, status: newStatus } : seller));
-        alert(`Seller status updated to ${newStatus}`);
+    const fetchSellers = async () => {
+        try {
+            setLoading(true);
+            const data = await apiService.users.getSellerStats();
+            setSellers(data);
+        } catch (error) {
+            toast.error('Failed to fetch sellers');
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    React.useEffect(() => {
+        fetchSellers();
+    }, []);
+
+    const handleStatusChange = async (id, newStatus) => {
+        try {
+            await apiService.users.update(id, { status: newStatus });
+            toast.success(`Seller status updated to ${newStatus}`);
+            fetchSellers(); // Refresh
+        } catch (error) {
+            toast.error('Failed to update status');
+        }
     };
 
     return (
@@ -43,7 +62,9 @@ const AdminSellers = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {sellers.map((seller) => (
+                        {loading ? (
+                            <tr><td colSpan="5" className="text-center py-10">Loading sellers...</td></tr>
+                        ) : sellers.map((seller) => (
                             <tr key={seller.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center">
@@ -51,54 +72,52 @@ const AdminSellers = () => {
                                             {seller.name.charAt(0)}
                                         </div>
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">{seller.name}</div>
-                                            <div className="text-sm text-gray-500">{seller.owner}</div>
+                                            <div className="text-sm font-medium text-gray-900">{seller.storeName || seller.name}</div>
+                                            <div className="text-sm text-gray-500">{seller.name} ({seller.email})</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        ${seller.status === 'Active' ? 'bg-green-100 text-green-800' :
-                                            seller.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                        ${seller.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800' :
+                                            seller.status.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                                 'bg-red-100 text-red-800'}`}>
                                         {seller.status}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {seller.sales}
+                                    ₹{(seller.totalSales || 0).toLocaleString()} <br/>
+                                    <span className="text-xs text-gray-400">{seller.totalOrders || 0} orders</span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <div className="flex text-yellow-400">
-                                        ★ {seller.rating || '-'}
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-yellow-400">★</span> 
+                                        <span>{seller.averageRating || 'N/A'}</span>
+                                        <span className="text-xs text-gray-400">({seller.productCount} prods)</span>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    {seller.status === 'Pending' && (
-                                        <button
-                                            onClick={() => handleStatusChange(seller.id, 'Active')}
-                                            className="text-green-600 hover:text-green-900 mr-4"
-                                            title="Approve"
-                                        >
-                                            <UserCheck className="w-5 h-5" />
-                                        </button>
-                                    )}
-                                    {seller.status === 'Active' && (
-                                        <button
-                                            onClick={() => handleStatusChange(seller.id, 'Suspended')}
-                                            className="text-red-600 hover:text-red-900 mr-4"
-                                            title="Suspend"
-                                        >
-                                            <UserX className="w-5 h-5" />
-                                        </button>
-                                    )}
-                                    {seller.status === 'Suspended' && (
-                                        <button
-                                            onClick={() => handleStatusChange(seller.id, 'Active')}
-                                            className="text-green-600 hover:text-green-900 mr-4"
-                                            title="Reactivate"
-                                        >
-                                            <UserCheck className="w-5 h-5" />
-                                        </button>
+                                    {seller.role !== 'admin' && (
+                                        <>
+                                            {(seller.status.toLowerCase() === 'pending' || seller.status.toLowerCase() === 'suspended') && (
+                                                <button
+                                                    onClick={() => handleStatusChange(seller.id, 'active')}
+                                                    className="text-green-600 hover:text-green-900 mr-4"
+                                                    title="Approve/Reactivate"
+                                                >
+                                                    <UserCheck className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                            {seller.status.toLowerCase() === 'active' && (
+                                                <button
+                                                    onClick={() => handleStatusChange(seller.id, 'suspended')}
+                                                    className="text-red-600 hover:text-red-900 mr-4"
+                                                    title="Suspend"
+                                                >
+                                                    <UserX className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                 </td>
                             </tr>

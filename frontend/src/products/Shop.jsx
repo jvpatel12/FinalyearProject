@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Star, ShoppingCart, Heart, Eye, Filter, Search, Grid, List } from 'lucide-react';
 import storageService from '../services/storageService';
 import { useCart } from '../cart/CartContext.jsx';
+import { useWishlist } from '../context/WishlistContext';
 import { apiService } from '../services/apiService';
 import { categories as initialCategories } from "./productsData";
 
@@ -15,7 +16,7 @@ const Shop = () => {
   const location = useLocation();
   const { addToCart } = useCart();
   const [categories] = useState(() => storageService.getCategories() || []);
-  const [wishlist, setWishlist] = useState([]);
+  const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [searchTerm, setSearchTerm] = useState(() => {
     const queryParams = new URLSearchParams(location.search);
     return queryParams.get('search') || '';
@@ -27,62 +28,54 @@ const Shop = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  // Fetch products from API
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const data = await apiService.products.getAll();
+  // Fetch products from API with filters
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        keyword: searchTerm,
+        categories: selectedCategory === 'all' ? '' : selectedCategory,
+        minPrice: priceRange.min,
+        maxPrice: priceRange.max,
+        sort: sortBy === 'price-low' ? 'priceLow' : sortBy === 'price-high' ? 'priceHigh' : sortBy === 'rating' ? 'rating' : 'newest',
+        pageNumber: page,
+        pageSize: 12
+      };
+
+      const data = await apiService.products.getAll(params);
+
+      // Handle different return structures if any
+      if (data.products) {
+        setProducts(data.products);
+        setPages(data.pages);
+        setTotal(data.total);
+      } else {
         setProducts(data);
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
-      } finally {
-        setLoading(false);
+        setPages(1);
+        setTotal(data.length);
       }
-    };
-    fetchProducts();
-  }, []);
-
-  // Filter products
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    const matchesPrice = (!priceRange.min || product.price >= parseFloat(priceRange.min)) &&
-      (!priceRange.max || product.price <= parseFloat(priceRange.max));
-    return matchesSearch && matchesCategory && matchesPrice;
-  });
-
-  // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    const aRating = a.rating ?? a.averageRating ?? 0;
-    const bRating = b.rating ?? b.averageRating ?? 0;
-    switch (sortBy) {
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      case 'rating':
-        return bRating - aRating;
-      case 'name':
-        return a.name?.localeCompare(b.name || '') || 0;
-      case 'newest':
-        return new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0);
-      case 'relevance':
-      default:
-        return 0;
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+    } finally {
+      setLoading(false);
     }
-  });
+  };
 
-  // Toggle wishlist
-  const toggleWishlist = (productId) => {
-    setWishlist(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
+  useEffect(() => {
+    fetchProducts();
+  }, [searchTerm, selectedCategory, priceRange.min, priceRange.max, sortBy, page]);
+
+  // Toggle wishlist using global context
+  const toggleWishlist = (product) => {
+    if (isInWishlist(product.id)) {
+      removeFromWishlist(product.id);
+    } else {
+      addToWishlist(product);
+    }
   };
 
   // Render star rating
@@ -233,8 +226,8 @@ const Shop = () => {
         {/* Results Count */}
         <div className="mb-6 relative z-10">
           <p className="text-slate-400 font-mono text-sm">
-            &gt; Found <span className="text-cyan-400 font-bold">{filteredProducts.length}</span> products
-            {selectedCategory !== 'all' && ` in [${categories.find(c => c.slug === selectedCategory)?.name}]`}
+            &gt; Found <span className="text-cyan-400 font-bold">{total || products.length}</span> products
+            {selectedCategory !== 'all' && ` in [${(categories.length > 0 ? categories : initialCategories).find(c => c.slug === selectedCategory)?.name || selectedCategory}]`}
           </p>
         </div>
 
@@ -244,7 +237,7 @@ const Shop = () => {
             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-500 mb-4 shadow-[0_0_15px_rgba(6,182,212,0.4)]"></div>
             <p className="text-cyan-400 font-mono animate-pulse">Loading products...</p>
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : products.length === 0 ? (
           <div className="text-center py-20 bg-slate-800/20 rounded-2xl border border-slate-800 relative z-10 backdrop-blur-sm">
             <Search size={64} className="mx-auto text-slate-600 mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
             <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">No products found</h3>
@@ -261,7 +254,7 @@ const Shop = () => {
             ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
             : 'grid-cols-1'
             }`}>
-            {sortedProducts.map((product) => (
+            {products.map((product) => (
               <div key={product.id} className={`group bg-slate-800/40 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.4)] border border-slate-700/50 overflow-hidden hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] hover:border-cyan-500/30 transition-all duration-500 backdrop-blur-sm flex ${viewMode === 'list' ? 'flex-row' : 'flex-col'
                 }`}>
                 {/* Product Image */}
@@ -269,16 +262,16 @@ const Shop = () => {
                   {/* Subtle background glow behind product */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-cyan-600/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-                    <img
-                      src={product.image || '/images/sample.jpg'}
-                      alt={product.name}
-                      onError={(e) => { 
-                        if (e.currentTarget.src.endsWith('/images/sample.jpg')) return;
-                        e.currentTarget.onerror = null; 
-                        e.currentTarget.src = '/images/sample.jpg'; 
-                      }}
-                      className={`w-full ${viewMode === 'list' ? 'h-full' : 'h-full'} object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-700 relative z-10`}
-                    />
+                  <img
+                    src={product.images && product.images.length > 0 ? product.images[0] : '/images/sample.jpg'}
+                    alt={product.name}
+                    onError={(e) => {
+                      if (e.currentTarget.src.endsWith('/images/sample.jpg')) return;
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/images/sample.jpg';
+                    }}
+                    className={`w-full ${viewMode === 'list' ? 'h-full' : 'h-full'} object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-700 relative z-10`}
+                  />
 
                   {product.discount > 0 && (
                     <div className="absolute top-3 left-3 z-20 bg-red-500/90 backdrop-blur-md border border-red-500/50 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(239,68,68,0.3)]">
@@ -286,12 +279,12 @@ const Shop = () => {
                     </div>
                   )}
                   <button
-                    onClick={() => toggleWishlist(product.id)}
+                    onClick={() => toggleWishlist(product)}
                     className="absolute top-3 right-3 z-20 bg-slate-900/60 backdrop-blur-md border border-slate-700 p-2.5 rounded-full hover:bg-slate-800 hover:border-cyan-500/50 transition-all duration-300 shadow-xl group/wishlist"
                   >
                     <Heart
                       size={18}
-                      className={`transition-all duration-300 ${wishlist.includes(product.id) ? 'fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-slate-400 group-hover/wishlist:text-red-400'}`}
+                      className={`transition-all duration-300 ${isInWishlist(product.id) ? 'fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-slate-400 group-hover/wishlist:text-red-400'}`}
                     />
                   </button>
                 </div>
@@ -365,6 +358,23 @@ const Shop = () => {
                 </div>
               </div>
             ))}
+            {/* Pagination */}
+            {pages > 1 && (
+              <div className="mt-12 flex justify-center gap-2">
+                {[...Array(pages).keys()].map(x => (
+                  <button
+                    key={x + 1}
+                    onClick={() => setPage(x + 1)}
+                    className={`w-10 h-10 rounded-lg border font-mono text-sm transition-all ${page === x + 1
+                        ? 'bg-cyan-500 border-cyan-500 text-slate-900 font-bold shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-white'
+                      }`}
+                  >
+                    {x + 1}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -8,11 +8,11 @@ const upload = require('../middleware/uploadMiddleware');
 
 router.route('/')
     .get(getProducts)
-    .post(protect, sellerOrAdmin, upload.single('image'), createProduct);
+    .post(protect, sellerOrAdmin, upload.array('images', 5), createProduct);
 
 router.route('/:id')
     .get(getProductById)
-    .put(protect, sellerOrAdmin, upload.single('image'), updateProduct)
+    .put(protect, sellerOrAdmin, upload.array('images', 5), updateProduct)
     .delete(protect, sellerOrAdmin, deleteProduct);
 
 router.route('/:id/reviews')

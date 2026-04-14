@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import NavBar from './common/Navbar';
 import Footer from './common/Footer';
+import { useAuth } from './auth/useAuth';
+import socket from './utils/socket';
+import { toast } from 'react-hot-toast';
 
 /**
  * Layout Component
@@ -10,6 +13,43 @@ import Footer from './common/Footer';
  * Enhanced with modern design elements and smooth transitions
  */
 function Layout() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user && user.id) {
+      // Connect socket if not connected
+      if (!socket.connected) {
+        socket.connect();
+      }
+
+      // Join user-specific room for notifications
+      socket.emit('joinRoom', `user_${user.id}`);
+
+      // Listen for order status updates
+      socket.on('orderStatusUpdated', (data) => {
+        toast.success(`Order #${data.orderId.substring(data.orderId.length - 8).toUpperCase()} is now ${data.status.toUpperCase()}!`, {
+          duration: 6000,
+          icon: '📦',
+          style: {
+            borderRadius: '12px',
+            background: '#0f172a',
+            color: '#fff',
+            border: '1px solid #1e293b'
+          },
+        });
+      });
+
+      return () => {
+        socket.off('orderStatusUpdated');
+        socket.emit('leaveRoom', `user_${user.id}`);
+      };
+    } else {
+      // Disconnect if user logs out
+      if (socket.connected) {
+        socket.disconnect();
+      }
+    }
+  }, [user]);
 
   const handleSearch = (query) => {
     console.log('Searching for:', query);

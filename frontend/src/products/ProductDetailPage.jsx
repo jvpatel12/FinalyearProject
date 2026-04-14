@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Heart, Share2, ChevronLeft, ChevronRight, ShoppingCart, Eye, TrendingUp, ArrowLeft } from 'lucide-react';
-import { apiService } from '../services/apiService';
-import { useCart } from '../cart/CartContext.jsx';
+import { toast } from 'react-hot-toast';
+import { useCart } from '../cart/CartContext';
 import { useWishlist } from '../context/WishlistContext';
-
-/**
- * Product Detail Page Component
- * Image gallery with zoom, specifications, reviews, and related products
- */
+import { apiService } from '../services/apiService';
+import { TrendingUp, Star, Eye, ArrowLeft, Heart, ShoppingCart, Share2 } from 'lucide-react';
 const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -21,90 +17,106 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [showZoom, setShowZoom] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [reviewTab, setReviewTab] = useState('overview');
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [userReview, setUserReview] = useState({ rating: 5, comment: '' });
+  const [userReview, setUserReview] = useState({ rating: 5, comment: '', name: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  const fetchProductData = async () => {
+    try {
+      setLoading(true);
+      const data = await apiService.products.getById(id);
+      setProduct(data);
+      if (data.colors) setSelectedColor(data.colors[0]);
+      if (data.sizes) setSelectedSize(data.sizes[0]);
+
+      // Get reviews
+      const productReviews = await apiService.products.getReviews(id);
+      setReviews(productReviews);
+
+      // Get related products
+      const allProducts = await apiService.products.getAll();
+      const related = (allProducts.products || allProducts)
+        .filter(p => p.category === data.category && p.id !== data.id)
+        .slice(0, 4);
+      setRelatedProducts(related);
+    } catch (error) {
+      console.error("Failed to fetch product:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        const data = await apiService.products.getById(id);
-        setProduct(data);
-        if (data.colors) setSelectedColor(data.colors[0]);
-        if (data.sizes) setSelectedSize(data.sizes[0]);
-
-        // Get reviews
-        const productReviews = await apiService.products.getReviews(id);
-        setReviews(productReviews);
-
-        // Get related products
-        const allProducts = await apiService.products.getAll();
-        const related = allProducts
-          .filter(p => p.category === data.category && p.id !== data.id)
-          .slice(0, 4);
-        setRelatedProducts(related);
-      } catch (error) {
-        console.error("Failed to fetch product:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProduct();
+    fetchProductData();
   }, [id]);
 
-  const isWishlisted = isInWishlist(product?.id);
-
-  // Redirect if product not found
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center pt-20">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-500 mb-4 shadow-[0_0_15px_rgba(6,182,212,0.4)]"></div>
-        <p className="text-cyan-400 font-mono animate-pulse uppercase tracking-[0.2em]">Accessing Product Database...</p>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Product Not Found</h1>
-          <p className="text-gray-600 mb-4">The product you're looking for doesn't exist.</p>
-          <button
-            onClick={() => navigate('/shop')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Shop
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!userReview.comment) {
+        toast.error('Please add a comment');
+        return;
+    }
+    
+    try {
+        setSubmittingReview(true);
+        await apiService.reviews.submitReview(id, userReview);
+        toast.success('Review submitted successfully!');
+        setUserReview({ rating: 5, comment: '', name: '' });
+        // Refresh reviews
+        const productReviews = await apiService.products.getReviews(id);
+        setReviews(productReviews);
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to submit review');
+    } finally {
+        setSubmittingReview(false);
+    }
   };
 
   const handleAddToCart = () => {
     // Add to cart using context API (will handle quantity internally)
-    for (let i = 0; i < quantity; i++) {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        sellerId: product.sellerId,
-      });
-    }
+    const productImages = product.images && product.images.length > 0 ? product.images : ['/images/sample.jpg'];
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: productImages[0],
+      sellerId: product.sellerId,
+      qty: quantity
+    });
 
-    showToast(`Added ${quantity} ${product.name} to cart!`);
+    toast.success(`Added ${quantity} ${product.name} to cart!`);
     setQuantity(1);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: product.name,
+      text: `Check out the ${product.name} on LogiMart!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard!', {
+          icon: '🔗',
+          style: {
+            borderRadius: '10px',
+            background: '#0f172a',
+            color: '#fff',
+            border: '1px solid #1e293b'
+          },
+        });
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
   };
 
   const handleMouseMove = (e) => {
@@ -114,9 +126,37 @@ const ProductDetailPage = () => {
     setMousePos({ x: x * 100, y: y * 100 });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-cyan-500 mb-4 shadow-[0_0_15px_rgba(6,182,212,0.4)]"></div>
+        <p className="text-cyan-400 font-mono animate-pulse uppercase tracking-[0.2em] text-sm font-black">Decrypting Product Data...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="text-center bg-slate-900 border border-slate-800 rounded-3xl p-12 max-w-md w-full shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
+          <h2 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter">Access Denied</h2>
+          <p className="text-slate-400 mb-8 font-light">The requested product data could not be retrieved or the item has been removed from our archives.</p>
+          <button 
+            onClick={() => navigate('/shop')}
+            className="w-full bg-cyan-500 text-slate-900 h-14 rounded-xl font-black uppercase tracking-widest hover:bg-cyan-400 transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+          >
+            Return to Shop
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const discount = product.originalPrice > product.price ? Math.round((1 - product.price / product.originalPrice) * 100) : 0;
   const productRating = product.rating ?? product.averageRating ?? 0;
   const productReviewsCount = product.reviews ?? product.numReviews ?? 0;
+  const isWishlisted = product ? isInWishlist(product.id) : false;
 
   // Render star rating
   const renderStars = (rating) => {
@@ -143,14 +183,6 @@ const ProductDetailPage = () => {
       {/* Background Ambience */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-cyan-600/5 rounded-full blur-[150px] pointer-events-none mix-blend-screen"></div>
 
-      {/* Toast */}
-      {toast.show && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-semibold backdrop-blur-md border shadow-[0_0_30px_rgba(0,0,0,0.5)] ${toast.type === 'success' ? 'bg-green-500/90 border-green-400/50' : 'bg-red-500/90 border-red-400/50'
-          }`}>
-          {toast.message}
-        </div>
-      )}
-
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         {/* Back Button */}
         <button
@@ -167,7 +199,7 @@ const ProductDetailPage = () => {
           <span>/</span>
           <button onClick={() => navigate('/shop')} className="hover:text-cyan-400 transition-colors">Shop</button>
           <span>/</span>
-          <span className="text-white font-bold">{product.name}</span>
+          <span className="text-white font-bold">{product?.name || 'Loading...'}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-20 items-center">
@@ -184,7 +216,7 @@ const ProductDetailPage = () => {
 
               <div className="relative w-full h-full flex items-center justify-center">
                 <img
-                  src={product.image}
+                  src={product.images && product.images.length > 0 ? product.images[selectedImageIndex] : '/images/sample.jpg'}
                   alt={product.name}
                   className={`max-w-full max-h-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] transition-transform duration-300 ${showZoom ? 'cursor-zoom-in' : 'cursor-default'
                     }`}
@@ -204,10 +236,10 @@ const ProductDetailPage = () => {
                 onClick={() => {
                   if (isWishlisted) {
                     removeFromWishlist(product.id);
-                    showToast('Removed from wishlist');
+                    toast.success('Removed from wishlist');
                   } else {
                     addToWishlist(product);
-                    showToast('Added to wishlist');
+                    toast.success('Added to wishlist');
                   }
                 }}
                 className={`absolute top-6 right-6 z-20 w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border ${isWishlisted
@@ -218,6 +250,28 @@ const ProductDetailPage = () => {
                 <Heart size={22} className={isWishlisted ? 'fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-slate-400'} />
               </button>
             </div>
+
+            {/* Image Thumbnails */}
+            {product.images && product.images.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
+                      ? 'border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.4)]'
+                      : 'border-slate-700 hover:border-slate-500'
+                      }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`Product thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right: Product Info */}
@@ -345,11 +399,26 @@ const ProductDetailPage = () => {
                   <ShoppingCart size={22} />
                   Add to Cart
                 </button>
+
+                <a
+                  href={`https://wa.me/919726380613?text=Hello, I am interested in inquiring about the product: ${product.name} (ID: ${product.id}). Please provide more details.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 border border-green-500/50 bg-green-500/10 text-green-400 h-14 rounded-xl hover:bg-green-500 hover:text-white transition-all font-bold text-lg shadow-[0_0_20px_rgba(34,197,94,0.1)] hover:shadow-[0_0_30px_rgba(34,197,94,0.3)]"
+                >
+                  <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .018 5.396.015 12.03c0 2.123.559 4.196 1.621 6.007L0 24l6.135-1.61a11.803 11.803 0 005.917 1.583h.005c6.637 0 12.032-5.398 12.035-12.032.002-3.218-1.248-6.242-3.517-8.511z"/>
+                  </svg>
+                  Inquire
+                </a>
               </div>
 
               {/* Action Buttons */}
               <div className="flex gap-4">
-                <button className="flex-1 flex items-center justify-center gap-2 border border-slate-700 bg-slate-800/50 text-slate-300 py-3 rounded-xl hover:bg-slate-700 hover:text-white transition-all font-semibold backdrop-blur-sm">
+                <button 
+                  onClick={handleShare}
+                  className="flex-1 flex items-center justify-center gap-2 border border-slate-700 bg-slate-800/50 text-slate-300 py-3 rounded-xl hover:bg-slate-700 hover:text-white transition-all font-semibold backdrop-blur-sm"
+                >
                   <Share2 size={18} />
                   Share Product
                 </button>
@@ -449,25 +518,38 @@ const ProductDetailPage = () => {
                     Write a Review
                   </h3>
                   <form onSubmit={handleReviewSubmit} className="space-y-6">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Rating</label>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={() => setUserReview({ ...userReview, rating: star })}
-                            className="bg-transparent border-none p-1 transition-transform hover:scale-125 focus:outline-none"
-                          >
-                            <Star
-                              size={28}
-                              className={`${star <= userReview.rating
-                                ? 'fill-cyan-400 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]'
-                                : 'text-slate-700'
-                                }`}
-                            />
-                          </button>
-                        ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Your Name</label>
+                        <input
+                          type="text"
+                          value={userReview.name}
+                          onChange={(e) => setUserReview({ ...userReview, name: e.target.value })}
+                          className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all font-light"
+                          placeholder="Cyber Citizen #404"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Rating</label>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setUserReview({ ...userReview, rating: star })}
+                              className="bg-transparent border-none p-1 transition-transform hover:scale-125 focus:outline-none"
+                            >
+                              <Star
+                                size={28}
+                                className={`${star <= userReview.rating
+                                  ? 'fill-cyan-400 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]'
+                                  : 'text-slate-700'
+                                  }`}
+                              />
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                     <div>

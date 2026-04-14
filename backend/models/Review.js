@@ -17,9 +17,16 @@ const reviewSchema = new mongoose.Schema({
         min: 1,
         max: 5
     },
+    name: {
+        type: String,
+        required: true
+    },
     comment: {
         type: String,
         required: true
+    },
+    reply: {
+        type: String
     }
 }, {
     timestamps: true

@@ -1,3 +1,23 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Local development files
+*.local
+tree.txt
+lint_output.txt
+lint_results_*.txt
+build_error*.log
+
+# Build and node_modules
+node_modules
+dist
+dist-ssr
+build/
+
 # Logs
 logs
 *.log
@@ -7,10 +27,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Static uploads
+image/uploads/*
+!image/uploads/.gitkeep
 
 # Editor directories and files
 .vscode/*
@@ -22,9 +41,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-lint_log.txt
-build_error*.log
-tree.txt
 
 # Docs
 docs/

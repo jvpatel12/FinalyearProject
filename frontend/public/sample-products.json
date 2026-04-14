@@ -1,0 +1,57 @@
+[
+  {
+    "name": "Wireless Headphones Pro",
+    "description": "Premium wireless headphones with active noise cancellation, 40-hour battery life, and superior sound quality",
+    "price": 12999,
+    "originalPrice": 16999,
+    "discount": 23,
+    "stock_quantity": 150,
+    "category": "Headphones",
+    "brand": "TechBrand",
+    "sku": "WHP-001"
+  },
+  {
+    "name": "4K Webcam HD",
+    "description": "Professional 4K USB webcam with auto-focus and built-in microphone for streaming",
+    "price": 4999,
+    "originalPrice": 6999,
+    "discount": 29,
+    "stock_quantity": 75,
+    "category": "Cameras",
+    "brand": "ProVision",
+    "sku": "WCM-001"
+  },
+  {
+    "name": "Gaming Mechanical Keyboard",
+    "description": "RGB mechanical keyboard with Cherry MX switches, customizable lighting, and ultra-responsive keys",
+    "price": 6499,
+    "originalPrice": 8999,
+    "discount": 28,
+    "stock_quantity": 200,
+    "category": "Accessories",
+    "brand": "GameGear",
+    "sku": "GMK-001"
+  },
+  {
+    "name": "Portable SSD 1TB",
+    "description": "Ultra-fast portable SSD with 1050MB/s read speed, rugged design perfect for content creators",
+    "price": 8999,
+    "originalPrice": 11999,
+    "discount": 25,
+    "stock_quantity": 100,
+    "category": "Accessories",
+    "brand": "StoragePro",
+    "sku": "PSS-001"
+  },
+  {
+    "name": "Smart Watch Pro",
+    "description": "Advanced smartwatch with heart rate monitor, sleep tracking, and 7-day battery life",
+    "price": 14999,
+    "originalPrice": 19999,
+    "discount": 25,
+    "stock_quantity": 120,
+    "category": "Wearables",
+    "brand": "TechBrand",
+    "sku": "SWT-001"
+  }
+]

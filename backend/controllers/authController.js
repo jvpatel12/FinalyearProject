@@ -8,20 +8,14 @@ const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        console.log("Incoming email:", email);
-        console.log("Incoming password:", password);
-
         const user = await User.findOne({ email: email.trim().toLowerCase() });
-
-        console.log("User found:", user);
 
         if (!user) {
             res.status(401);
             throw new Error('Invalid email or password');
         }
-        console.log("Stored password:", user.password);
+        
         const isMatch = await user.matchPassword(password);
-        console.log("Password match:", isMatch);
 
         if (!isMatch) {
             res.status(401);
@@ -77,7 +71,6 @@ const registerUser = async (req, res, next) => {
                     _id: user._id,
                     name: user.name,
                     email: user.email,
-                    password: user.password,
                     role: user.role,
                     avatar: user.avatar
                 },
@@ -131,9 +124,56 @@ const logoutUser = (req, res) => {
     res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateUserProfile = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (user) {
+            user.name = req.body.name || user.name;
+            user.email = req.body.email || user.email;
+            user.avatar = req.body.avatar || user.avatar;
+            
+            if (req.body.password) {
+                user.password = req.body.password;
+            }
+
+            if (req.body.address) {
+                user.address = {
+                    ...user.address,
+                    ...req.body.address
+                };
+            }
+
+            const updatedUser = await user.save();
+
+            res.json({
+                success: true,
+                user: {
+                    _id: updatedUser._id,
+                    name: updatedUser.name,
+                    email: updatedUser.email,
+                    role: updatedUser.role,
+                    avatar: updatedUser.avatar,
+                    address: updatedUser.address
+                },
+                token: generateToken(updatedUser._id, updatedUser.role)
+            });
+        } else {
+            res.status(404);
+            throw new Error('User not found');
+        }
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     loginUser,
     registerUser,
     getUserProfile,
+    updateUserProfile,
     logoutUser
 };

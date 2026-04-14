@@ -64,11 +64,11 @@ const SellerLayout = () => {
     }
     return location.pathname.startsWith(path);
   };
-
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/login', { replace: true });
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

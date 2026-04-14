@@ -1,7 +1,7 @@
 import React from 'react';
 import { useWishlist } from '../../context/WishlistContext';
-import { useCart } from '../../cart/CartContext'; // Assuming CartContext is in cart folder
-import { Trash2, ShoppingCart, Heart } from 'lucide-react';
+import { useCart } from '../../cart/CartContext';
+import { Trash2, ShoppingCart, Heart, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const WishlistPage = () => {
@@ -9,11 +9,12 @@ const WishlistPage = () => {
     const { addToCart } = useCart();
 
     const handleAddToCart = (product) => {
+        const productImages = product.images && product.images.length > 0 ? product.images : ['/images/sample.jpg'];
         addToCart({
             id: product.id,
             name: product.name,
             price: product.price,
-            image: product.image,
+            image: productImages[0],
             sellerId: product.sellerId
         });
         removeFromWishlist(product.id);
@@ -21,66 +22,82 @@ const WishlistPage = () => {
 
     if (wishlist.length === 0) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-                <div className="text-center">
-                    <Heart className="mx-auto h-12 w-12 text-gray-300" />
-                    <h2 className="mt-2 text-lg font-medium text-gray-900">Your wishlist is empty</h2>
-                    <p className="mt-1 text-sm text-gray-500">Start exploring and save items you love!</p>
-                    <div className="mt-6">
-                        <Link
-                            to="/shop" // Assuming /shop is the products listing page
-                            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                            Start Shopping
-                        </Link>
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center py-24 px-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)]"></div>
+                <div className="text-center relative z-10">
+                    <div className="w-24 h-24 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-800 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                        <Heart className="h-10 w-10 text-slate-700" />
                     </div>
+                    <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Your Vault is Empty</h2>
+                    <p className="text-slate-400 max-w-md mx-auto mb-10 font-light">Your curated selection of future tech awaits. Start scouting the shop to add items to your watchlist.</p>
+                    <Link
+                        to="/shop"
+                        className="inline-flex items-center px-8 py-4 bg-cyan-500 text-slate-950 font-bold uppercase tracking-widest rounded-xl hover:bg-cyan-400 transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] hover:scale-105"
+                    >
+                        Initialize Shopping
+                        <ArrowRight className="ml-2 w-5 h-5" />
+                    </Link>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-                <h1 className="text-3xl font-bold text-gray-900 mb-8">My Wishlist ({wishlist.length})</h1>
+        <div className="min-h-screen bg-slate-950 pt-28 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+            {/* Background elements */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-600/5 rounded-full blur-[120px] pointer-events-none"></div>
+            
+            <div className="max-w-7xl mx-auto relative z-10">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+                    <div>
+                        <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-4">
+                            <span className="w-2 h-10 bg-cyan-500 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.8)]"></span>
+                            My <span className="text-cyan-400">Watchlist</span>
+                        </h1>
+                        <p className="text-slate-500 mt-2 font-mono text-xs uppercase tracking-widest">Saved Inventory: {wishlist.length} Items</p>
+                    </div>
+                    <Link to="/shop" className="text-cyan-500 hover:text-cyan-400 font-bold text-sm uppercase tracking-widest flex items-center gap-2 transition-colors">
+                        Continue Scouting <ArrowRight size={16} />
+                    </Link>
+                </div>
 
-                <div className="grid grid-cols-1 gap-y-10 sm:grid-cols-2 gap-x-6 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
+                <div className="grid grid-cols-1 gap-y-10 sm:grid-cols-2 gap-x-6 lg:grid-cols-3 xl:grid-cols-4">
                     {wishlist.map((product) => (
-                        <div key={product.id} className="group relative bg-white border border-gray-200 rounded-xl flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                            <div className="aspect-w-1 aspect-h-1 bg-gray-200 group-hover:opacity-75 h-64 overflow-hidden relative">
+                        <div key={product.id} className="group relative bg-slate-900/40 backdrop-blur-md border border-slate-800 rounded-3xl flex flex-col overflow-hidden hover:border-cyan-500/30 hover:shadow-[0_0_40px_rgba(6,182,212,0.1)] transition-all duration-500">
+                            <div className="aspect-square bg-slate-950 group-hover:opacity-90 overflow-hidden relative p-8">
                                 <img
-                                    src={product.image}
+                                    src={product.images && product.images.length > 0 ? product.images[0] : '/images/sample.jpg'}
                                     alt={product.name}
-                                    className="w-full h-full object-center object-cover"
+                                    className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110 drop-shadow-2xl"
                                 />
                                 <button
                                     onClick={() => removeFromWishlist(product.id)}
-                                    className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white text-red-500 hover:text-red-600 shadow-sm transition-colors"
-                                    title="Remove from Wishlist"
+                                    className="absolute top-4 right-4 p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-400 hover:text-red-400 hover:border-red-500/50 shadow-xl transition-all z-20 backdrop-blur-md"
+                                    title="Remove from Watchlist"
                                 >
                                     <Trash2 className="w-5 h-5" />
                                 </button>
                             </div>
-                            <div className="flex-1 p-4 flex flex-col justify-between">
+                            <div className="flex-1 p-6 flex flex-col justify-between">
                                 <div>
-                                    <h3 className="text-lg font-medium text-gray-900">
+                                    <span className="text-[10px] font-bold text-cyan-500 uppercase tracking-[0.2em] mb-2 block">{product.brand || 'Tech Gear'}</span>
+                                    <h3 className="text-lg font-bold text-white leading-tight mb-2 group-hover:text-cyan-400 transition-colors">
                                         <Link to={`/product/${product.id}`}>
-                                            <span aria-hidden="true" className="absolute inset-0" />
                                             {product.name}
                                         </Link>
                                     </h3>
-                                    <p className="mt-1 text-xl font-bold text-gray-900">₹{product.price.toLocaleString()}</p>
+                                    <p className="mt-1 text-2xl font-black text-white tracking-tight">₹{product.price.toLocaleString()}</p>
                                 </div>
-                                <div className="mt-4">
+                                <div className="mt-6">
                                     <button
                                         onClick={(e) => {
-                                            e.preventDefault(); // Prevent navigation to product detail
+                                            e.preventDefault();
                                             handleAddToCart(product);
                                         }}
-                                        className="w-full relative z-10 flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                        className="w-full py-3 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-cyan-500 hover:text-slate-950 hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all flex items-center justify-center gap-2 group/btn"
                                     >
-                                        <ShoppingCart className="w-4 h-4 mr-2" />
-                                        Move to Cart
+                                        <ShoppingCart className="w-4 h-4 transition-transform group-hover/btn:scale-110" />
+                                        Initialize Order
                                     </button>
                                 </div>
                             </div>

@@ -49,7 +49,7 @@ const Navbar = ({ onSearch }) => {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
     setShowProfileMenu(false);
   };
 

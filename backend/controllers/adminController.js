@@ -129,11 +129,58 @@ const getAdminStats = async (req, res, next) => {
     }
 };
 
+// @desc    Get all sellers with their performance stats
+// @route   GET /api/admin/sellers/stats
+// @access  Private/Admin
+const getSellersWithStats = async (req, res, next) => {
+    try {
+        const sellers = await User.find({ role: 'seller' }).select('-password');
+        
+        const sellersWithStats = await Promise.all(sellers.map(async (seller) => {
+            // Get all products by this seller
+            const products = await Product.find({ seller: seller._id });
+            const productIds = products.map(p => p._id);
+            
+            // Calculate total sales from orders
+            const orders = await Order.find({ 
+                'orderItems.product': { $in: productIds },
+                isPaid: true 
+            });
+            
+            const totalSales = orders.reduce((acc, order) => {
+                const sellerItems = order.orderItems.filter(item => productIds.some(id => id.equals(item.product)));
+                return acc + sellerItems.reduce((itemAcc, item) => itemAcc + (item.price * item.qty), 0);
+            }, 0);
+
+            const totalOrders = orders.length;
+
+            // Calculate average rating
+            const avgRating = products.length > 0 
+                ? (products.reduce((acc, p) => acc + (p.averageRating || 0), 0) / products.length).toFixed(1)
+                : 0;
+
+            return {
+                ...seller._doc,
+                id: seller._id,
+                totalSales,
+                totalOrders,
+                averageRating: parseFloat(avgRating),
+                productCount: products.length
+            };
+        }));
+
+        res.json(sellersWithStats);
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getUsers,
     deleteUser,
     updateUserRole,
     updateUserStatus,
     getOrders,
-    getAdminStats
+    getAdminStats,
+    getSellersWithStats
 };

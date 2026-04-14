@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Edit, Trash2, Plus, Search } from 'lucide-react';
+import { Package, Edit, Trash2, Plus, Search, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../../services/apiService';
 import { useAuth } from '../../auth/useAuth';
@@ -54,10 +54,16 @@ const SellerProducts = () => {
           <h2 className="text-2xl font-bold text-gray-900">My Products</h2>
           <p className="text-gray-600">Manage your product inventory</p>
         </div>
-        <Link to="/seller/add-product" className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 flex items-center shadow-sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Product
-        </Link>
+        <div className="flex gap-2">
+          <Link to="/seller/add-product" className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 flex items-center shadow-sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Product
+          </Link>
+          <Link to="/seller/products/bulk-upload" className="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 flex items-center shadow-sm">
+            <Upload className="w-4 h-4 mr-2" />
+            Bulk Upload
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -97,7 +103,7 @@ const SellerProducts = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
-                          <img className="h-10 w-10 rounded-md object-cover border border-gray-200" src={product.image} alt="" />
+                          <img className="h-10 w-10 rounded-md object-cover border border-gray-200" src={product.images && product.images.length > 0 ? product.images[0] : '/images/sample.jpg'} alt="" />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{product.name}</div>

@@ -5,9 +5,10 @@ const Product = require('../models/Product');
 // @access  Public
 const getProducts = async (req, res, next) => {
     try {
-        const pageSize = 10;
+        const pageSize = Number(req.query.pageSize) || 12;
         const page = Number(req.query.pageNumber) || 1;
 
+        // Search Keyword
         const keyword = req.query.keyword
             ? {
                 name: {
@@ -17,13 +18,39 @@ const getProducts = async (req, res, next) => {
             }
             : {};
 
-        const count = await Product.countDocuments({ ...keyword });
-        const products = await Product.find({ ...keyword })
+        // Category Filter (Multiple categories)
+        const categories = req.query.categories ? req.query.categories.split(',') : [];
+        const categoryFilter = categories.length > 0 
+            ? { category: { $in: categories.map(cat => new RegExp(`^${cat}$`, 'i')) } } 
+            : {};
+
+        // Price Filter
+        const minPrice = Number(req.query.minPrice) || 0;
+        const maxPrice = Number(req.query.maxPrice) || Infinity;
+        const priceFilter = { price: { $gte: minPrice, $lte: maxPrice } };
+
+        // Sorting
+        let sort = {};
+        if (req.query.sort === 'priceLow') sort = { price: 1 };
+        else if (req.query.sort === 'priceHigh') sort = { price: -1 };
+        else if (req.query.sort === 'rating') sort = { averageRating: -1 };
+        else sort = { createdAt: -1 }; // Default to newest
+
+        const query = { ...keyword, ...categoryFilter, ...priceFilter };
+
+        const count = await Product.countDocuments(query);
+        const products = await Product.find(query)
             .populate('seller', 'name email storeName')
+            .sort(sort)
             .limit(pageSize)
             .skip(pageSize * (page - 1));
 
-        res.json({ products, page, pages: Math.ceil(count / pageSize) });
+        res.json({ 
+            products, 
+            page, 
+            pages: Math.ceil(count / pageSize),
+            total: count
+        });
     } catch (error) {
         next(error);
     }
@@ -56,8 +83,10 @@ const createProduct = async (req, res, next) => {
 
         let imageUrls = [];
 
-        // Handle image upload to local storage if file exists
-        if (req.file) {
+        // Handle multiple image upload to local storage
+        if (req.files && req.files.length > 0) {
+            imageUrls = req.files.map(file => `/images/uploads/${file.filename}`);
+        } else if (req.file) {
             imageUrls.push(`/images/uploads/${req.file.filename}`);
         } else if (req.body.images) {
             imageUrls = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
@@ -107,10 +136,23 @@ const updateProduct = async (req, res, next) => {
         }
 
         // Handle image update to local storage
-        if (req.file) {
-            product.images = [`/images/uploads/${req.file.filename}`];
-        } else if (req.body.images) {
-            product.images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+        let updatedImages = [];
+        
+        // Get existing images keeped by the user
+        if (req.body.images) {
+            updatedImages = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+        }
+        
+        // Add new uploaded images
+        if (req.files && req.files.length > 0) {
+            const newImages = req.files.map(file => `/images/uploads/${file.filename}`);
+            updatedImages = [...updatedImages, ...newImages];
+        } else if (req.file) {
+            updatedImages.push(`/images/uploads/${req.file.filename}`);
+        }
+
+        if (updatedImages.length > 0) {
+            product.images = updatedImages;
         }
 
         product.name = name || product.name;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Eye, Truck, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react';
+import { ShoppingCart, Eye, Truck, CheckCircle, XCircle, Clock, Search, Filter, Check } from 'lucide-react';
 import { apiService } from '../../services/apiService';
 import { useAuth } from '../../auth/useAuth';
 
@@ -19,19 +19,16 @@ const SellerOrders = () => {
   }, [user]);
 
   const fetchOrders = async () => {
-    if (!user?.id) return;
     try {
-      // Use dedicated API method
-      const sellerOrdersRaw = await apiService.orders.getSellerOrders(user.id);
+      setIsLoading(true);
+      const sellerOrdersRaw = await apiService.orders.getSellerOrders();
 
-      // Calculate specific metrics for this seller
       const sellerOrders = sellerOrdersRaw.map(order => ({
         ...order,
-        // Calculate total for only this seller's items in the order
-        sellerTotal: order.items
-          .filter(item => item.sellerId === user.id)
-          .reduce((sum, item) => sum + (item.price * item.quantity), 0),
-        itemsCount: order.items.filter(item => item.sellerId === user.id).length
+        sellerTotal: (order.items || [])
+          .reduce((sum, item) => sum + (item.price * item.qty), 0),
+        itemsCount: (order.items || []).length,
+        date: order.createdAt
       }));
 
       setOrders(sellerOrders);
@@ -43,15 +40,13 @@ const SellerOrders = () => {
   };
 
   const handleStatusUpdate = async (orderId, newStatus) => {
-    // In a real multi-vendor system, seller updates item status, not order status usually.
-    // For simplicity here, we allow updating order status if it's the main items or simplified.
-    // Let's assume global order status update for now or mock it.
     try {
       await apiService.orders.updateStatus(orderId, newStatus);
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      import('react-hot-toast').then(({ toast }) => toast.success(`Order ${newStatus} successfully!`));
     } catch (error) {
       console.error("Failed to update status:", error);
-      alert("Failed to update status");
+      import('react-hot-toast').then(({ toast }) => toast.error("Failed to update status"));
     }
   };
 
@@ -63,10 +58,14 @@ const SellerOrders = () => {
   });
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case 'delivered': return 'bg-green-100 text-green-800';
+      case 'out for delivery': return 'bg-teal-100 text-teal-800';
       case 'shipped': return 'bg-blue-100 text-blue-800';
-      case 'processing': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-indigo-100 text-indigo-800';
+      case 'processing':
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -103,10 +102,12 @@ const SellerOrders = () => {
             onChange={(e) => setFilter(e.target.value)}
           >
             <option value="all">All Status</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Out for Delivery">Out for Delivery</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
           </select>
         </div>
       </div>
@@ -152,17 +153,33 @@ const SellerOrders = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        {order.status === 'processing' && (
+                        {(order.status === 'processing' || order.status === 'Pending') && (
                           <button
-                            onClick={() => handleStatusUpdate(order.id, 'shipped')}
+                            onClick={() => handleStatusUpdate(order.id, 'Confirmed')}
+                            className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded"
+                          >
+                            Confirm
+                          </button>
+                        )}
+                        {order.status === 'Confirmed' && (
+                          <button
+                            onClick={() => handleStatusUpdate(order.id, 'Shipped')}
                             className="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded"
                           >
                             Ship
                           </button>
                         )}
-                        {order.status === 'shipped' && (
+                        {order.status === 'Shipped' && (
                           <button
-                            onClick={() => handleStatusUpdate(order.id, 'delivered')}
+                            onClick={() => handleStatusUpdate(order.id, 'Out for Delivery')}
+                            className="text-teal-600 hover:text-teal-900 bg-teal-50 px-3 py-1 rounded"
+                          >
+                            Out for Delivery
+                          </button>
+                        )}
+                        {(order.status === 'Out for Delivery' || order.status === 'shipped') && (
+                          <button
+                            onClick={() => handleStatusUpdate(order.id, 'Delivered')}
                             className="text-emerald-600 hover:text-emerald-900 bg-emerald-50 px-3 py-1 rounded"
                           >
                             Deliver

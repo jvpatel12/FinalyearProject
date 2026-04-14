@@ -82,7 +82,7 @@ function Contact() {
               <Phone size={20} />
               <div>
                 <p className="font-semibold">Phone:</p>
-                <a href="tel:+919876543210" className="hover:underline">+91 98765 43210</a>
+                <a href="tel:+919726380613" className="hover:underline">+91 97263 80613</a>
               </div>
             </div>
             <div className="flex items-center gap-3">

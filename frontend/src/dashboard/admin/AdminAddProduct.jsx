@@ -24,18 +24,22 @@ const AdminAddProduct = () => {
     originalPrice: '',
     discount: ''
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, type, files } = e.target;
     
     if (type === 'file') {
-      const file = files[0];
-      if (file) {
-        setImageFile(file);
-        setImagePreview(URL.createObjectURL(file));
+      const selectedFiles = Array.from(files);
+      if (selectedFiles.length > 0) {
+        // Limit to 5 images total
+        const newFiles = [...imageFiles, ...selectedFiles].slice(0, 5);
+        setImageFiles(newFiles);
+        
+        const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+        setImagePreviews(newPreviews);
       }
       return;
     }
@@ -44,6 +48,13 @@ const AdminAddProduct = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const removeImage = (index) => {
+    const newFiles = imageFiles.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
   };
 
   const handleSubmit = async (e) => {
@@ -74,8 +85,10 @@ const AdminAddProduct = () => {
       form.append('status', parseInt(formData.stock) > 0 ? 'active' : 'out_of_stock');
       form.append('features', JSON.stringify([])); // Placeholder for features
 
-      if (imageFile) {
-        form.append('image', imageFile);
+      if (imageFiles.length > 0) {
+        imageFiles.forEach(file => {
+          form.append('images', file);
+        });
       } else if (formData.image) {
         form.append('images', formData.image);
       }
@@ -232,27 +245,48 @@ const AdminAddProduct = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Image *
+              Product Images * (Up to 5)
             </label>
-            <div className="mt-1 flex items-center space-x-5">
-              <div className="flex-shrink-0 h-32 w-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
-                {imagePreview || formData.image ? (
-                  <img src={imagePreview || formData.image} alt="Preview" className="h-full w-full object-contain" />
-                ) : (
-                  <span className="text-gray-400 text-xs text-center px-2">No image selected</span>
+            <div className="mt-2 space-y-4">
+              <div className="flex flex-wrap gap-4">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative h-32 w-32 border border-gray-200 rounded-lg overflow-hidden group">
+                    <img src={preview} alt={`Preview ${index}`} className="h-full w-full object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {imagePreviews.length < 5 && (
+                  <label className="flex-shrink-0 h-32 w-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
+                    <Save className="w-6 h-6 text-gray-400 mb-1" />
+                    <span className="text-gray-400 text-xs text-center px-2">Add Image</span>
+                    <input
+                      type="file"
+                      name="image"
+                      accept="image/*"
+                      multiple
+                      onChange={handleInputChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+                {imagePreviews.length === 0 && !formData.image && (
+                  <div className="flex-shrink-0 h-32 w-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                    <span className="text-gray-400 text-xs text-center px-2">No images selected</span>
+                  </div>
                 )}
               </div>
-              <input
-                type="file"
-                name="image"
-                accept="image/*"
-                onChange={handleInputChange}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
-              />
+              <p className="text-xs text-gray-500 italic">
+                {imageFiles.length > 0 
+                  ? `${imageFiles.length} images selected.` 
+                  : "No files selected. A default placeholder will be used if none provided."}
+              </p>
             </div>
-            {!imageFile && (
-              <p className="mt-1 text-xs text-gray-500 italic">No file selected. A default placeholder will be used.</p>
-            )}
           </div>
 
           <div className="flex justify-end space-x-4 border-t pt-4">

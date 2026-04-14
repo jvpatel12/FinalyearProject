@@ -148,7 +148,7 @@ const Deals = () => {
                                 <div className="absolute inset-0 bg-gradient-to-tr from-cyan-600/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
                                 <img
-                                    src={product.image || '/images/sample.jpg'}
+                                    src={product.images && product.images.length > 0 ? product.images[0] : '/images/sample.jpg'}
                                     alt={product.name}
                                     onError={(e) => { 
                                         if (e.currentTarget.src.endsWith('/images/sample.jpg')) return;

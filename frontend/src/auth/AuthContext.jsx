@@ -16,10 +16,39 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Cookie helper to manage session heartbeat
+  const SESSION_COOKIE = 'logimart_session_active';
+
+  const setSessionHeartbeat = () => {
+    // Set a cookie without an expiry date - it will be deleted when the browser is closed
+    document.cookie = `${SESSION_COOKIE}=true; path=/; SameSite=Lax`;
+  };
+
+  const hasSessionHeartbeat = () => {
+    return document.cookie.split(';').some(c => c.trim().startsWith(`${SESSION_COOKIE}=`));
+  };
+
+  const clearSessionHeartbeat = () => {
+    document.cookie = `${SESSION_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  };
+
   // Load user from localStorage on mount
   useEffect(() => {
     const loadUser = async () => {
       try {
+        // Check if this is a new browser session (cookie missing)
+        if (!hasSessionHeartbeat()) {
+          console.log('New browser session detected, clearing previous session data');
+          localStorage.removeItem('authUser');
+          localStorage.removeItem('token');
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('userEmail');
+          localStorage.removeItem('userName');
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
         const storedUser = localStorage.getItem('authUser');
         const token = localStorage.getItem('token');
 
@@ -75,6 +104,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userEmail', user.email);
       localStorage.setItem('userName', user.name);
+      
+      // Set session heartbeat cookie to persist across tabs but clear on browser close
+      setSessionHeartbeat();
 
       return {
         success: true,
@@ -106,6 +138,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userEmail', user.email);
       localStorage.setItem('userName', user.name);
+      
+      // Set session heartbeat cookie
+      setSessionHeartbeat();
 
       return {
         success: true,
@@ -130,6 +165,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userName');
+    
+    // Clear session heartbeat
+    clearSessionHeartbeat();
   };
 
   /**

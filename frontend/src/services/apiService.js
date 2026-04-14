@@ -40,6 +40,10 @@ const mapId = (doc) => {
     if (newDoc.totalPrice !== undefined && newDoc.total === undefined) {
         newDoc.total = newDoc.totalPrice;
     }
+    // Handle items mapping
+    if (newDoc.orderItems && !newDoc.items) {
+        newDoc.items = newDoc.orderItems;
+    }
     // Normalize status for consistent filtering
     if (newDoc.status) {
         newDoc.status = newDoc.status.toLowerCase();
@@ -102,11 +106,9 @@ export const apiService = {
             const { data } = await api.get('/auth/profile');
             return mapId(data.user);
         },
-        updateProfile: async (userId, updates) => {
-            // Placeholder: The backend currently lacks a general PUT /api/auth/profile for standard users
-            // Returning the updates for now to avoid breaking the frontend entirely
-            console.warn('updateProfile endpoint might not be fully supported by the backend auth router yet.');
-            return updates;
+        updateProfile: async (updates) => {
+            const { data } = await api.put('/auth/profile', updates);
+            return mapId(data.user);
         }
     },
 
@@ -129,14 +131,30 @@ export const apiService = {
                 await api.put(`/admin/user/${id}/status`, { status: updates.status });
             }
             return { id, ...updates };
+        },
+        getSellerStats: async () => {
+            const { data } = await api.get('/admin/sellers/stats');
+            return mapIds(data);
+        },
+        getAdminStats: async () => {
+            const { data } = await api.get('/admin/stats');
+            return data; // Returns { users, products, orders, revenue }
         }
     },
 
     // --- PRODUCT SERVICES ---
     products: {
-        getAll: async () => {
-            const { data } = await api.get('/products');
-            return mapIds(data.products || data);
+        getAll: async (params) => {
+            const { data } = await api.get('/products', { params });
+            // Handle paginated response { products, pages, page, total }
+            if (data.products) {
+                return {
+                    ...data,
+                    products: mapIds(data.products)
+                };
+            }
+            // Handle simple array response
+            return mapIds(data);
         },
         getById: async (id) => {
             const { data } = await api.get(`/products/${id}`);
@@ -144,7 +162,7 @@ export const apiService = {
         },
         create: async (productData) => {
             let payload;
-            
+
             if (productData instanceof FormData) {
                 payload = productData;
             } else {
@@ -214,6 +232,14 @@ export const apiService = {
         submitReview: async (productId, reviewData) => {
             const { data } = await api.post(`/products/${productId}/reviews`, reviewData);
             return data;
+        },
+        replyToReview: async (reviewId, reply) => {
+            const { data } = await api.post(`/reviews/${reviewId}/reply`, { reply });
+            return data;
+        },
+        getSellerReviews: async () => {
+            const { data } = await api.get('/reviews/seller');
+            return mapIds(data);
         }
     },
 
@@ -229,62 +255,64 @@ export const apiService = {
             const { data } = await api.get('/orders/myorders');
             return mapIds(data);
         },
-        getSellerOrders: async (sellerId) => {
-            // Using admin endpoint as a workaround since no specific seller order endpoint exists
-            try {
-                const { data } = await api.get('/admin/orders');
-                const orders = mapIds(data);
-                return orders.filter(order =>
-                    order.orderItems && order.orderItems.some(item => {
-                        // Assuming product population includes seller data or we just compare id if populated
-                        const itemSeller = typeof item.product === 'object' ? item.product.seller : null;
-                        return itemSeller && itemSeller.toString() === sellerId.toString();
-                    })
-                );
-            } catch (error) {
-                console.error("Seller orders requires admin access on this backend", error);
-                return [];
-            }
+        getSellerOrders: async () => {
+            const { data } = await api.get('/orders/seller');
+            return mapIds(data);
         },
         placeOrder: async (orderData) => {
-            // The exact format CheckoutPage.jsx passes has `items` arrays
-            // Backend orderController requires cart to be populated
-            if (orderData.items && Array.isArray(orderData.items)) {
-                // Clear existing cart on backend
-                try {
-                    await api.delete('/cart');
-                } catch (e) {
-                    console.warn('Could not clear remote cart', e);
-                }
-
-                // Populate the backend cart
-                for (const item of orderData.items) {
-                    try {
-                        await api.post('/cart', {
-                            productId: item.productId,
-                            quantity: item.quantity
-                        });
-                    } catch (e) {
-                        console.error('Failed to add item to remote cart:', item, e.response?.data || e.message);
-                        throw new Error(`Failed to sync item "${item.name}" to cart. If this is a test product, please clear your cart and add a new product from the shop.`);
-                    }
-                }
-            }
-
-            // Finally, checkout. Backend reads values directly from req.body
-            const { data } = await api.post('/orders', {
+            // New streamlined checkout: send items directly in body
+            const payload = {
                 shippingAddress: orderData.shippingAddress,
-                paymentMethod: orderData.paymentMethod || 'card'
-            });
+                paymentMethod: orderData.paymentMethod || 'card',
+                orderItems: orderData.items.map(item => ({
+                    product: item.productId || item.id,
+                    name: item.name,
+                    qty: item.quantity,
+                    image: item.image,
+                    price: item.price
+                })),
+                itemsPrice: orderData.items.reduce((acc, item) => acc + item.price * item.quantity, 0),
+            };
 
+            const { data } = await api.post('/orders', payload);
             return mapId(data.order || data);
         },
         updateStatus: async (orderId, status) => {
             const { data } = await api.put(`/orders/${orderId}/status`, { status });
             return mapId(data);
         },
+        createRazorpayOrder: async (orderId) => {
+            const { data } = await api.post(`/orders/${orderId}/pay/razorpay/create`);
+            return data;
+        },
+        verifyRazorpayPayment: async (orderId, paymentData) => {
+            const { data } = await api.post(`/orders/${orderId}/pay/razorpay/verify`, paymentData);
+            return data;
+        },
         delete: async (orderId) => {
             const { data } = await api.delete(`/orders/${orderId}`);
+            return data;
+        }
+    },
+
+    // --- BULK PRODUCT OPERATIONS ---
+    bulkProducts: {
+        validate: async (file) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            const { data } = await api.post('/products/bulk/validate', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return data;
+        },
+        insert: async (validProducts) => {
+            const { data } = await api.post('/products/bulk/insert', { validProducts });
+            return data;
+        },
+        getTemplate: async () => {
+            const { data } = await api.get('/products/bulk/template');
             return data;
         }
     }

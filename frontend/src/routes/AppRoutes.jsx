@@ -35,9 +35,13 @@ import AdminCategories from "../dashboard/admin/AdminCategories";
 import AdminSellers from "../dashboard/admin/AdminSellers";
 import AdminCoupons from "../dashboard/admin/AdminCoupons";
 import AdminSettings from "../dashboard/admin/AdminSettings";
+import AdminBulkUploadPage from "../dashboard/admin/AdminBulkUploadPage";
+import SellerBulkUploadPage from "../dashboard/seller/BulkUploadPage";
 import CustomerDashboard from "../dashboard/customer/CustomerDashboard";
 import Deals from "../Pages/Deals";
 import NewArrivals from "../Pages/NewArrivals";
+import About from "../Pages/About";
+import FAQ from "../Pages/FAQ";
 
 const router = createBrowserRouter([
   {
@@ -56,12 +60,12 @@ const router = createBrowserRouter([
       { path: "deals", element: <Deals /> },
       { path: "new", element: <NewArrivals /> },
       { path: "bestsellers", element: <div>Bestsellers page coming soon</div> },
-      { path: "about", element: <div>About us page coming soon</div> },
+      { path: "about", element: <About /> },
       { path: "careers", element: <div>Careers page coming soon</div> },
       { path: "press", element: <div>Press page coming soon</div> },
       { path: "blog", element: <div>Blog page coming soon</div> },
       { path: "help", element: <div>Help center coming soon</div> },
-      { path: "faq", element: <div>FAQ page coming soon</div> },
+      { path: "faq", element: <FAQ /> },
       { path: "shipping", element: <div>Shipping info coming soon</div> },
       { path: "privacy", element: <div>Privacy policy coming soon</div> },
       { path: "terms", element: <div>Terms of service coming soon</div> },
@@ -129,10 +133,11 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: "/admin", element: <AdminDashboard /> },
+      { index: true, element: <AdminDashboard /> },
       { path: "products", element: <AdminProducts /> },
       { path: "products/add", element: <AdminAddProduct /> },
       { path: "products/edit/:id", element: <AdminEditProduct /> },
+      { path: "products/bulk-upload", element: <AdminBulkUploadPage /> },
       { path: "categories", element: <AdminCategories /> },
       { path: "users", element: <AdminUsers /> },
       { path: "sellers", element: <AdminSellers /> },
@@ -151,6 +156,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <SellerDashboard /> },
       { path: "products", element: <SellerProducts /> },
+      { path: "products/bulk-upload", element: <SellerBulkUploadPage /> },
       { path: "add-product", element: <AddProduct /> },
       { path: "edit-product/:id", element: <AddProduct /> },
       { path: "orders", element: <SellerOrders /> },

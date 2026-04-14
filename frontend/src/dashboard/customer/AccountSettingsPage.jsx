@@ -1,21 +1,69 @@
-import React, { useState } from 'react';
-import { Lock, Bell, Shield, Eye, EyeOff, Save } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { useAuth } from '../../auth/useAuth';
+import { apiService } from '../../services/apiService';
+import { useState } from 'react';
+import { Shield, Bell, Lock, Eye, EyeOff, Save } from 'lucide-react';
 
-/**
- * Account Settings Page Component
- * Allows users to manage account settings like password, notifications, privacy
- */
 const AccountSettingsPage = () => {
+  const { user, login } = useAuth(); // login to update local state/token
   const [activeTab, setActiveTab] = useState('security');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+
+  const [profileData, setProfileData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    avatar: user?.avatar || ''
+  });
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New passwords do not match!');
+      return;
+    }
+    
+    try {
+        setIsSubmitting(true);
+        // We use the same updateProfile endpoint as it handles password if provided
+        await apiService.auth.updateProfile({ 
+            password: passwordData.newPassword 
+        });
+        toast.success('Password updated successfully!');
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to update password');
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    try {
+        setIsSubmitting(true);
+        const updatedUser = await apiService.auth.updateProfile(profileData);
+        // Update local auth state if possible or just toast
+        toast.success('Profile updated successfully!');
+        if (login && updatedUser) {
+            // This depends on how AuthContext is implemented.
+            // Assuming we might need to refresh or manual update.
+        }
+    } catch (error) {
+        toast.error('Failed to update profile');
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [notificationSettings, setNotificationSettings] = useState({
     orderUpdates: true,
@@ -38,25 +86,11 @@ const AccountSettingsPage = () => {
     }));
   };
 
-  const handlePasswordSubmit = (e) => {
-    e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('New passwords do not match!');
-      return;
-    }
-    // In a real app, this would update the password in the backend
-    alert('Password updated successfully!');
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
-  };
-
-  const handleNotificationChange = (setting) => {
-    setNotificationSettings(prev => ({
+  const handleProfileChange = (e) => {
+    const { name, value } = e.target;
+    setProfileData(prev => ({
       ...prev,
-      [setting]: !prev[setting]
+      [name]: value
     }));
   };
 
@@ -68,10 +102,17 @@ const AccountSettingsPage = () => {
     }));
   };
 
+  const handleNotificationChange = (key) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
   const tabs = [
+    { id: 'profile', label: 'Profile', icon: Shield }, // Reused Shield for profile or similar
     { id: 'security', label: 'Security', icon: Lock },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'privacy', label: 'Privacy', icon: Shield }
   ];
 
   return (
@@ -108,6 +149,49 @@ const AccountSettingsPage = () => {
 
           {/* Tab Content */}
           <div className="p-6">
+            {activeTab === 'profile' && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">Profile Information</h2>
+                <form onSubmit={handleProfileSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={profileData.name}
+                      onChange={handleProfileChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={profileData.email}
+                      onChange={handleProfileChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSubmitting ? 'Saving...' : 'Save Profile'}
+                  </button>
+                </form>
+              </div>
+            )}
             {activeTab === 'security' && (
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Change Password</h2>

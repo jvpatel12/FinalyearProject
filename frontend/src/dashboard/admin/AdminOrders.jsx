@@ -59,20 +59,28 @@ const AdminOrders = () => {
   });
 
   const getStatusIcon = (status) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case 'delivered': return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'out for delivery': return <Truck className="w-5 h-5 text-teal-500" />;
       case 'shipped': return <Truck className="w-5 h-5 text-blue-500" />;
-      case 'processing': return <Clock className="w-5 h-5 text-orange-500" />;
+      case 'confirmed': return <Clock className="w-5 h-5 text-indigo-500" />;
+      case 'processing':
+      case 'pending': return <Clock className="w-5 h-5 text-orange-500" />;
       case 'cancelled': return <XCircle className="w-5 h-5 text-red-500" />;
       default: return <Package className="w-5 h-5 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case 'delivered': return 'bg-green-100 text-green-800';
+      case 'out for delivery': return 'bg-teal-100 text-teal-800';
       case 'shipped': return 'bg-blue-100 text-blue-800';
-      case 'processing': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-indigo-100 text-indigo-800';
+      case 'processing':
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -109,10 +117,12 @@ const AdminOrders = () => {
             onChange={(e) => setFilter(e.target.value)}
           >
             <option value="all">All Status</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Out for Delivery">Out for Delivery</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
           </select>
         </div>
       </div>
@@ -159,41 +169,57 @@ const AdminOrders = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(order.date).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        {order.status === 'processing' && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          {(order.status === 'processing' || order.status === 'Pending') && (
+                            <button
+                              onClick={() => handleStatusUpdate(order.id, 'Confirmed')}
+                              className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded"
+                            >
+                              Confirm
+                            </button>
+                          )}
+                          {order.status === 'Confirmed' && (
+                            <button
+                              onClick={() => handleStatusUpdate(order.id, 'Shipped')}
+                              className="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded"
+                            >
+                              Ship
+                            </button>
+                          )}
+                          {order.status === 'Shipped' && (
+                            <button
+                              onClick={() => handleStatusUpdate(order.id, 'Out for Delivery')}
+                              className="text-teal-600 hover:text-teal-900 bg-teal-50 px-3 py-1 rounded"
+                            >
+                              Out for Delivery
+                            </button>
+                          )}
+                          {(order.status === 'Out for Delivery' || order.status === 'shipped') && (
+                            <button
+                              onClick={() => handleStatusUpdate(order.id, 'Delivered')}
+                              className="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded"
+                            >
+                              Mark Delivered
+                            </button>
+                          )}
+                          {(order.status === 'processing' || order.status === 'Pending' || order.status === 'Confirmed') && (
+                            <button
+                              onClick={() => handleStatusUpdate(order.id, 'Cancelled')}
+                              className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded"
+                            >
+                              Cancel
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleStatusUpdate(order.id, 'shipped')}
-                            className="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded"
+                            onClick={() => handleDeleteOrder(order.id)}
+                            className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded items-center flex"
+                            title="Delete Order"
                           >
-                            Ship
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                        )}
-                        {order.status === 'shipped' && (
-                          <button
-                            onClick={() => handleStatusUpdate(order.id, 'delivered')}
-                            className="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded"
-                          >
-                            Mark Delivered
-                          </button>
-                        )}
-                        {(order.status === 'processing' || order.status === 'placed') && (
-                          <button
-                            onClick={() => handleStatusUpdate(order.id, 'cancelled')}
-                            className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteOrder(order.id)}
-                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded items-center flex"
-                          title="Delete Order"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                        </div>
+                      </td>
                   </tr>
                 ))}
               </tbody>
