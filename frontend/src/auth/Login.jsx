@@ -57,7 +57,7 @@ const Login = () => {
       [name]: type === 'checkbox' ? checked : value,
     }));
     // Clear error for this field
-    if (errors[name]) { 
+    if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
@@ -146,8 +146,8 @@ const Login = () => {
                 onChange={handleChange}
                 placeholder="you@example.com"
                 className={`w-full pl-12 pr-4 py-3 bg-slate-900/50 border rounded-xl text-white placeholder-slate-600 outline-none transition-all duration-300 font-mono text-sm shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] ${errors.email
-                    ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/50 bg-red-500/5 text-red-400'
-                    : 'border-slate-700/50 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50'
+                  ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/50 bg-red-500/5 text-red-400'
+                  : 'border-slate-700/50 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50'
                   }`}
               />
               {errors.email && (
@@ -171,8 +171,8 @@ const Login = () => {
                 onChange={handleChange}
                 placeholder="••••••••"
                 className={`w-full pl-12 pr-12 py-3 bg-slate-900/50 border rounded-xl text-white placeholder-slate-600 outline-none transition-all duration-300 font-mono text-sm shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] ${errors.password
-                    ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/50 bg-red-500/5 text-red-400'
-                    : 'border-slate-700/50 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50'
+                  ? 'border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/50 bg-red-500/5 text-red-400'
+                  : 'border-slate-700/50 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50'
                   }`}
               />
               <button
@@ -198,7 +198,7 @@ const Login = () => {
                   className="peer appearance-none w-4 h-4 rounded border border-slate-600 bg-slate-900/50 checked:bg-cyan-500/20 checked:border-cyan-500 cursor-pointer transition-all"
                 />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity">
-                    <svg className="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <svg className="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                 </div>
               </div>
               <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">Remember me</span>
@@ -232,9 +232,8 @@ const Login = () => {
 
           {/* Sign Up Link */}
           <p className="text-center text-slate-400 text-sm">
-            Don't have clearance?{' '}
             <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold hover:underline transition-colors">
-              Request access
+              no account? sign up
             </Link>
           </p>
         </form>

@@ -1,19 +1,33 @@
-import React, { useState } from 'react';
+import { useEffect } from 'react';
+import { ProductSkeleton } from '../common/Skeleton';
+import Breadcrumbs from '../common/Breadcrumbs';
 import { useNavigate } from 'react-router-dom';
-import { Star, ShoppingCart, Heart, Eye, Grid, List, Sparkles } from 'lucide-react';
+import { useCart } from '../cart/CartContext';
+import { useState } from 'react';
 import storageService from '../services/storageService';
-import { useCart } from '../cart/CartContext.jsx';
+import { Heart, Star, Eye, ShoppingCart, Sparkles, Grid, List } from 'lucide-react';
 
-/**
- * New Arrivals Page Component
- * Displays the most recently added products
- */
 const NewArrivals = () => {
     const navigate = useNavigate();
     const { addToCart } = useCart();
     const [wishlist, setWishlist] = useState([]);
-    const [products, setProducts] = useState(() => storageService.getProducts() || []);
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('grid');
+
+    useEffect(() => {
+        const fetchNew = async () => {
+            try {
+                setLoading(true);
+                // In a real app this would be an API call
+                const all = storageService.getProducts() || [];
+                setProducts(all);
+            } finally {
+                setTimeout(() => setLoading(false), 800);
+            }
+        };
+        fetchNew();
+    }, []);
 
     // Filter products added within the last 7 days
     const oneWeekAgo = new Date();
@@ -67,6 +81,7 @@ const NewArrivals = () => {
     return (
         <div className="min-h-screen bg-background pt-20">
             <div className="max-w-7xl mx-auto px-4 py-8 relative">
+                <Breadcrumbs />
                 {/* Background glow */}
                 <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -108,110 +123,116 @@ const NewArrivals = () => {
                 </div>
 
                 {/* Products Grid/List */}
-                <div className={`grid gap-6 relative z-10 ${viewMode === 'grid'
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                    : 'grid-cols-1'
-                    }`}>
-                    {newProducts.map((product) => (
-                         <div key={product.id} className={`group bg-slate-800/40 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.4)] border border-slate-700/50 overflow-hidden hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] hover:border-cyan-500/30 transition-all duration-500 backdrop-blur-sm flex ${viewMode === 'list' ? 'flex-row' : 'flex-col'
-                            }`}>
-                            {/* Product Image */}
-                            <div className={`relative overflow-hidden bg-slate-900/50 p-6 flex items-center justify-center ${viewMode === 'list' ? 'w-64 flex-shrink-0' : 'aspect-square'}`}>
-                                {/* Subtle background glow behind product */}
-                                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-600/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                                <div className="absolute top-3 left-3 z-20 bg-cyan-500/90 backdrop-blur-md border border-cyan-500/50 text-slate-900 px-2.5 py-1 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(6,182,212,0.3)] flex items-center gap-1">
-                                    <Sparkles size={12} /> NEW
-                                </div>
-                                <img
-                                    src={product.images && product.images.length > 0 ? product.images[0] : '/images/sample.jpg'}
-                                    alt={product.name}
-                                    className={`w-full ${viewMode === 'list' ? 'h-full' : 'h-full'} object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-700 relative z-10`}
-                                />
-                                {product.discount > 0 && (
-                                     <div className="absolute top-3 right-3 right-auto left-auto mt-8 z-20 bg-red-500/90 backdrop-blur-md border border-red-500/50 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(239,68,68,0.3)]">
-                                        -{product.discount}%
+                {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative z-10">
+                        {[...Array(8)].map((_, i) => <ProductSkeleton key={i} />)}
+                    </div>
+                ) : (
+                    <div className={`grid gap-6 relative z-10 ${viewMode === 'grid'
+                        ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                        : 'grid-cols-1'
+                        }`}>
+                        {newProducts.map((product) => (
+                            <div key={product.id} className={`group bg-slate-800/40 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.4)] border border-slate-700/50 overflow-hidden hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] hover:border-cyan-500/30 transition-all duration-500 backdrop-blur-sm flex ${viewMode === 'list' ? 'flex-row' : 'flex-col'
+                                }`}>
+                                {/* Product Image */}
+                                <div className={`relative overflow-hidden bg-slate-900/50 p-6 flex items-center justify-center ${viewMode === 'list' ? 'w-64 flex-shrink-0' : 'aspect-square'}`}>
+                                    {/* Subtle background glow behind product */}
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-600/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                                    <div className="absolute top-3 left-3 z-20 bg-cyan-500/90 backdrop-blur-md border border-cyan-500/50 text-slate-900 px-2.5 py-1 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(6,182,212,0.3)] flex items-center gap-1">
+                                        <Sparkles size={12} /> NEW
                                     </div>
-                                )}
-                                <button
-                                    onClick={() => toggleWishlist(product.id)}
-                                    className="absolute top-3 right-3 z-20 bg-slate-900/60 backdrop-blur-md border border-slate-700 p-2.5 rounded-full hover:bg-slate-800 hover:border-cyan-500/50 transition-all duration-300 shadow-xl group/wishlist"
-                                >
-                                    <Heart
-                                        size={18}
-                                        className={`transition-all duration-300 ${wishlist.includes(product.id) ? 'fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-slate-400 group-hover/wishlist:text-red-400'}`}
+                                    <img
+                                        src={product.images && product.images.length > 0 ? product.images[0] : '/images/sample.jpg'}
+                                        alt={product.name}
+                                        className={`w-full ${viewMode === 'list' ? 'h-full' : 'h-full'} object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-700 relative z-10`}
                                     />
-                                </button>
-                            </div>
-
-                            {/* Product Info */}
-                             <div className={`p-6 flex flex-col justify-between relative z-10 ${viewMode === 'list' ? 'flex-1' : 'flex-1'}`}>
-                                <div>
-                                    <div className="mb-2 flex justify-between items-center">
-                                        <span className="text-[10px] uppercase font-bold text-cyan-500 tracking-widest">{product.brand}</span>
-                                        <span className="text-[10px] font-bold text-slate-400 bg-slate-800/50 border border-slate-700 px-2 py-0.5 rounded-md">
-                                            {getTimeAgo(product.createdAt)}
-                                        </span>
-                                    </div>
-
-                                    <h3 className="font-semibold text-white text-lg mb-2 line-clamp-2 group-hover:text-cyan-400 transition-colors h-14" onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer'}}>{product.name}</h3>
-
-                                     {viewMode === 'list' && (
-                                        <p className="text-slate-400 text-sm mb-4 line-clamp-2 font-light">{product.description}</p>
+                                    {product.discount > 0 && (
+                                        <div className="absolute top-3 right-3 right-auto left-auto mt-8 z-20 bg-red-500/90 backdrop-blur-md border border-red-500/50 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow-[0_0_10px_rgba(239,68,68,0.3)]">
+                                            -{product.discount}%
+                                        </div>
                                     )}
-
-                                    <div className="flex items-center mb-4">
-                                        <div className="flex gap-0.5">
-                                            {[1, 2, 3, 4, 5].map((star) => (
-                                                <Star
-                                                    key={star}
-                                                    size={14}
-                                                    className={`${star <= Math.floor(product.rating)
-                                                        ? 'fill-cyan-400 text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.4)]'
-                                                        : star - 0.5 <= product.rating
-                                                            ? 'fill-cyan-400 text-cyan-400 opacity-50'
-                                                            : 'text-slate-700'
-                                                        }`}
-                                                />
-                                            ))}
-                                        </div>
-                                        <span className="text-xs text-slate-500 ml-2 font-medium">({product.reviews} reviews)</span>
-                                    </div>
+                                    <button
+                                        onClick={() => toggleWishlist(product.id)}
+                                        className="absolute top-3 right-3 z-20 bg-slate-900/60 backdrop-blur-md border border-slate-700 p-2.5 rounded-full hover:bg-slate-800 hover:border-cyan-500/50 transition-all duration-300 shadow-xl group/wishlist"
+                                    >
+                                        <Heart
+                                            size={18}
+                                            className={`transition-all duration-300 ${wishlist.includes(product.id) ? 'fill-red-500 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-slate-400 group-hover/wishlist:text-red-400'}`}
+                                        />
+                                    </button>
                                 </div>
 
-                                <div className="mt-auto">
-                                    <div className="flex items-end justify-between mb-5">
-                                        <div className="flex flex-col">
-                                            {product.originalPrice > product.price && (
-                                                <span className="text-xs text-slate-500 line-through mb-0.5 font-mono">
-                                                    ₹{product.originalPrice.toLocaleString()}
-                                                </span>
-                                            )}
-                                            <span className="text-2xl font-bold text-white tracking-tight">₹{product.price.toLocaleString()}</span>
+                                {/* Product Info */}
+                                <div className={`p-6 flex flex-col justify-between relative z-10 ${viewMode === 'list' ? 'flex-1' : 'flex-1'}`}>
+                                    <div>
+                                        <div className="mb-2 flex justify-between items-center">
+                                            <span className="text-[10px] uppercase font-bold text-cyan-500 tracking-widest">{product.brand}</span>
+                                            <span className="text-[10px] font-bold text-slate-400 bg-slate-800/50 border border-slate-700 px-2 py-0.5 rounded-md">
+                                                {getTimeAgo(product.createdAt)}
+                                            </span>
+                                        </div>
+
+                                        <h3 className="font-semibold text-white text-lg mb-2 line-clamp-2 group-hover:text-cyan-400 transition-colors h-14" onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer' }}>{product.name}</h3>
+
+                                        {viewMode === 'list' && (
+                                            <p className="text-slate-400 text-sm mb-4 line-clamp-2 font-light">{product.description}</p>
+                                        )}
+
+                                        <div className="flex items-center mb-4">
+                                            <div className="flex gap-0.5">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <Star
+                                                        key={star}
+                                                        size={14}
+                                                        className={`${star <= Math.floor(product.rating)
+                                                            ? 'fill-cyan-400 text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.4)]'
+                                                            : star - 0.5 <= product.rating
+                                                                ? 'fill-cyan-400 text-cyan-400 opacity-50'
+                                                                : 'text-slate-700'
+                                                            }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <span className="text-xs text-slate-500 ml-2 font-medium">({product.reviews} reviews)</span>
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-3">
-                                        <button
-                                            onClick={() => navigate(`/product/${product.id}`)}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-slate-800 border border-slate-700 text-white py-2.5 px-4 rounded-xl hover:bg-slate-700 hover:border-slate-500 transition-all font-semibold"
-                                        >
-                                            <Eye size={16} />
-                                            View
-                                        </button>
-                                        <button
-                                            onClick={() => addToCart(product)}
-                                            disabled={product.stock === 0}
-                                            className="flex-1 flex items-center justify-center gap-2 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-slate-900 hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-500/20 py-2.5 px-4 rounded-xl disabled:bg-slate-800 disabled:text-slate-600 disabled:border-slate-800 disabled:shadow-none transition-all font-semibold"
-                                        >
-                                            <ShoppingCart size={16} />
-                                            Add
-                                        </button>
+                                    <div className="mt-auto">
+                                        <div className="flex items-end justify-between mb-5">
+                                            <div className="flex flex-col">
+                                                {product.originalPrice > product.price && (
+                                                    <span className="text-xs text-slate-500 line-through mb-0.5 font-mono">
+                                                        ₹{product.originalPrice.toLocaleString()}
+                                                    </span>
+                                                )}
+                                                <span className="text-2xl font-bold text-white tracking-tight">₹{product.price.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => navigate(`/product/${product.id}`)}
+                                                className="flex-1 flex items-center justify-center gap-2 bg-slate-800 border border-slate-700 text-white py-2.5 px-4 rounded-xl hover:bg-slate-700 hover:border-slate-500 transition-all font-semibold"
+                                            >
+                                                <Eye size={16} />
+                                                View
+                                            </button>
+                                            <button
+                                                onClick={() => addToCart(product)}
+                                                disabled={product.stock === 0}
+                                                className="flex-1 flex items-center justify-center gap-2 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-slate-900 hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-cyan-500/20 py-2.5 px-4 rounded-xl disabled:bg-slate-800 disabled:text-slate-600 disabled:border-slate-800 disabled:shadow-none transition-all font-semibold"
+                                            >
+                                                <ShoppingCart size={16} />
+                                                Add
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

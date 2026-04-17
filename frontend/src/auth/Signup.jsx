@@ -94,12 +94,12 @@ const Signup = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12 relative overflow-hidden">
       {/* Background glowing effects */}
-       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none"></div>
-       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
 
       {/* Toast Notification */}
       {toast.show && (
-         <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium animate-fade-in shadow-[0_0_20px_rgba(0,0,0,0.5)] border ${toast.type === 'success' ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-red-500/20 border-red-500/50 text-red-400'
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium animate-fade-in shadow-[0_0_20px_rgba(0,0,0,0.5)] border ${toast.type === 'success' ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-red-500/20 border-red-500/50 text-red-400'
           }`}>
           {toast.message}
         </div>
@@ -108,7 +108,7 @@ const Signup = () => {
       <div className="w-full max-w-md relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-           <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-4">
             <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.4)] border border-cyan-400/20">
               <span className="text-white font-bold text-3xl tracking-tighter">L</span>
             </div>
@@ -126,7 +126,7 @@ const Signup = () => {
               Requesting profile class:
             </label>
             <div className="grid grid-cols-2 gap-4">
-               <label className={`cursor-pointer border rounded-xl p-4 flex flex-col items-center justify-center transition-all duration-300 ${formData.role === 'customer'
+              <label className={`cursor-pointer border rounded-xl p-4 flex flex-col items-center justify-center transition-all duration-300 ${formData.role === 'customer'
                 ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
                 : 'border-slate-700/50 bg-slate-900/50 text-slate-400 hover:border-slate-500 hover:text-white'
                 }`}>
@@ -155,7 +155,7 @@ const Signup = () => {
                   className="hidden"
                 />
                 <span className="mb-2 text-2xl drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">🛍️</span>
-                <span className="font-semibold text-sm">Merchant</span>
+                <span className="font-semibold text-sm">Seller</span>
               </label>
             </div>
           </div>
@@ -279,8 +279,8 @@ const Signup = () => {
                   onChange={handleChange}
                   className="peer appearance-none w-4 h-4 rounded border border-slate-600 bg-slate-900/50 checked:bg-cyan-500/20 checked:border-cyan-500 cursor-pointer transition-all"
                 />
-                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity">
-                    <svg className="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity">
+                  <svg className="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                 </div>
               </div>
               <span className="text-xs text-slate-400 leading-snug">
@@ -306,14 +306,14 @@ const Signup = () => {
             loading={loading}
             onClick={handleSubmit}
           >
-            {loading ? 'Initializing...' : 'Initialize Clearance'}
+            {loading ? 'Creating...' : 'Create Account'}
           </Button>
 
           {/* Sign In Link */}
           <p className="text-center text-slate-400 text-sm">
-            Already verified?{' '}
+            Already have an account?{' '}
             <a href="/login" className="text-cyan-400 hover:text-cyan-300 font-semibold hover:underline transition-colors">
-              Access portal
+              Login
             </a>
           </p>
         </form>

@@ -289,6 +289,10 @@ export const apiService = {
             const { data } = await api.post(`/orders/${orderId}/pay/razorpay/verify`, paymentData);
             return data;
         },
+        cancelOrder: async (orderId) => {
+            const { data } = await api.put(`/orders/${orderId}/cancel`);
+            return mapId(data);
+        },
         delete: async (orderId) => {
             const { data } = await api.delete(`/orders/${orderId}`);
             return data;

@@ -1,198 +1,200 @@
 const Product = require('../models/Product');
 
-// @desc    Fetch all products
+// Custom async handler to avoid dependency on express-async-handler
+const asyncHandler = (fn) => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+// @desc    Get all products with filtering
 // @route   GET /api/products
 // @access  Public
-const getProducts = async (req, res, next) => {
-    try {
-        const pageSize = Number(req.query.pageSize) || 12;
-        const page = Number(req.query.pageNumber) || 1;
+const getProducts = asyncHandler(async (req, res) => {
+    const {
+        search,
+        keyword,
+        category,
+        categories,
+        brand,
+        brands,
+        rating,
+        minRating,
+        availability,
+        minPrice,
+        maxPrice,
+        sortBy,
+        sort,
+        page = 1,
+        pageNumber,
+        limit = 12,
+        pageSize
+    } = req.query;
 
-        // Search Keyword
-        const keyword = req.query.keyword
-            ? {
-                name: {
-                    $regex: req.query.keyword,
-                    $options: 'i'
-                }
-            }
-            : {};
+    const query = {};
 
-        // Category Filter (Multiple categories)
-        const categories = req.query.categories ? req.query.categories.split(',') : [];
-        const categoryFilter = categories.length > 0 
-            ? { category: { $in: categories.map(cat => new RegExp(`^${cat}$`, 'i')) } } 
-            : {};
+    // Determine final values from potential aliases
+    const finalSearch = search || keyword;
+    const finalCategory = category || categories;
+    const finalBrand = brand || brands;
+    const finalRating = rating || minRating;
+    const finalSort = sortBy || sort;
+    const finalPage = pageNumber || page;
+    const finalLimit = pageSize || limit;
 
-        // Price Filter
-        const minPrice = Number(req.query.minPrice) || 0;
-        const maxPrice = Number(req.query.maxPrice) || Infinity;
-        const priceFilter = { price: { $gte: minPrice, $lte: maxPrice } };
+    console.log('--- DEBUG FILTERING ---');
+    console.log('Incoming Query:', req.query);
 
-        // Sorting
-        let sort = {};
-        if (req.query.sort === 'priceLow') sort = { price: 1 };
-        else if (req.query.sort === 'priceHigh') sort = { price: -1 };
-        else if (req.query.sort === 'rating') sort = { averageRating: -1 };
-        else sort = { createdAt: -1 }; // Default to newest
-
-        const query = { ...keyword, ...categoryFilter, ...priceFilter };
-
-        const count = await Product.countDocuments(query);
-        const products = await Product.find(query)
-            .populate('seller', 'name email storeName')
-            .sort(sort)
-            .limit(pageSize)
-            .skip(pageSize * (page - 1));
-
-        res.json({ 
-            products, 
-            page, 
-            pages: Math.ceil(count / pageSize),
-            total: count
-        });
-    } catch (error) {
-        next(error);
+    // Search Filter
+    if (finalSearch && finalSearch.trim() !== '') {
+        query.name = { $regex: finalSearch, $options: 'i' };
     }
-};
 
-// @desc    Fetch single product
+    // Category Filter (Case-insensitive)
+    if (finalCategory && finalCategory !== 'all' && finalCategory !== '') {
+        query.category = { $regex: new RegExp('^' + finalCategory + '$', 'i') };
+    }
+
+    // Brand Filter (Case-insensitive)
+    if (finalBrand && finalBrand !== 'all' && finalBrand !== '') {
+        query.brand = { $regex: new RegExp('^' + finalBrand + '$', 'i') };
+    }
+
+    // Rating Filter
+    if (finalRating && finalRating !== '0' && finalRating !== '') {
+        query.averageRating = { $gte: Number(finalRating) };
+    }
+
+    // Price Range Filter
+    if ((minPrice && minPrice !== '') || (maxPrice && maxPrice !== '')) {
+        query.price = {};
+        if (minPrice && minPrice !== '') query.price.$gte = Number(minPrice);
+        if (maxPrice && maxPrice !== '') query.price.$lte = Number(maxPrice);
+    }
+
+    // Availability Filter
+    if (availability === 'in-stock') {
+        query.stock_quantity = { $gt: 0 };
+    } else if (availability === 'out-of-stock') {
+        query.stock_quantity = { $lte: 0 };
+    }
+
+    console.log('Mongoose Query Body:', query);
+
+    // Sort Logic
+    let sortObj = {};
+    if (finalSort === 'newest' || finalSort === 'createdAt') {
+        sortObj = { createdAt: -1 };
+    } else if (finalSort === 'price-low' || finalSort === 'priceLow') {
+        sortObj = { price: 1 };
+    } else if (finalSort === 'price-high' || finalSort === 'priceHigh') {
+        sortObj = { price: -1 };
+    } else if (finalSort === 'rating') {
+        sortObj = { averageRating: -1 };
+    } else {
+        sortObj = { createdAt: -1 };
+    }
+
+    const skip = (Number(finalPage) - 1) * Number(finalLimit);
+
+    const products = await Product.find(query)
+        .sort(sortObj)
+        .skip(skip)
+        .limit(Number(finalLimit));
+
+    const total = await Product.countDocuments(query);
+
+    console.log('Products Found:', products.length);
+    console.log('--- END DEBUG ---');
+
+    res.json({
+        products,
+        page: Number(finalPage),
+        pages: Math.ceil(total / Number(finalLimit)),
+        total
+    });
+});
+
+// @desc    Get single product
 // @route   GET /api/products/:id
 // @access  Public
-const getProductById = async (req, res, next) => {
-    try {
-        const product = await Product.findById(req.params.id);
-        if (product) {
-            res.json(product);
-        } else {
-            res.status(404);
-            throw new Error('Product not found');
-        }
-    } catch (error) {
-        next(error);
+const getProductById = asyncHandler(async (req, res) => {
+    const product = await Product.findById(req.params.id);
+
+    if (product) {
+        res.json(product);
+    } else {
+        res.status(404);
+        throw new Error('Product not found');
     }
-};
+});
 
 // @desc    Create a product
 // @route   POST /api/products
-// @access  Private/Seller
-const createProduct = async (req, res, next) => {
-    try {
-        const { name, price, originalPrice, discount, description, category, stock_quantity, stock } = req.body;
-        const actualStock = stock_quantity !== undefined ? stock_quantity : (stock !== undefined ? stock : 0);
+// @access  Private/Seller-Admin
+const createProduct = asyncHandler(async (req, res) => {
+    const { name, price, description, brand, category, stock_quantity, originalPrice, discount } = req.query; // Fallback to query if needed
 
-        let imageUrls = [];
+    // Typically data comes in req.body
+    const productData = req.body;
 
-        // Handle multiple image upload to local storage
-        if (req.files && req.files.length > 0) {
-            imageUrls = req.files.map(file => `/images/uploads/${file.filename}`);
-        } else if (req.file) {
-            imageUrls.push(`/images/uploads/${req.file.filename}`);
-        } else if (req.body.images) {
-            imageUrls = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-        } else {
-            imageUrls = ['/images/sample.jpg'];
-        }
+    const product = new Product({
+        name: productData.name || 'Sample Name',
+        price: productData.price || 0,
+        originalPrice: productData.originalPrice || productData.price || 0,
+        discount: productData.discount || 0,
+        seller: req.user._id,
+        image: productData.image || '/images/sample.jpg',
+        images: productData.images && productData.images.length > 0 ? productData.images : ['/images/sample.jpg'],
+        brand: productData.brand || 'Sample Brand',
+        category: productData.category || 'Sample Category',
+        stock_quantity: productData.stock_quantity || 0,
+        description: productData.description || 'Sample Description',
+    });
 
-        const product = new Product({
-            name: name || 'Sample name',
-            price: price || 0,
-            originalPrice: originalPrice || 0,
-            discount: discount || 0,
-            seller: req.user._id,
-            images: imageUrls,
-            category: category || 'Other',
-            stock_quantity: actualStock,
-            numReviews: 0,
-            description: description || 'Sample description'
-        });
-
-        const createdProduct = await product.save();
-        res.status(201).json(createdProduct);
-    } catch (error) {
-        next(error);
-    }
-};
+    const createdProduct = await product.save();
+    res.status(201).json(createdProduct);
+});
 
 // @desc    Update a product
 // @route   PUT /api/products/:id
-// @access  Private/Seller or Admin
-const updateProduct = async (req, res, next) => {
-    try {
-        const { name, price, originalPrice, discount, description, category, stock_quantity, stock } = req.body;
-        const actualStockUpdate = stock_quantity !== undefined ? stock_quantity : stock;
+// @access  Private/Seller-Admin
+const updateProduct = asyncHandler(async (req, res) => {
+    const { name, price, description, brand, category, stock_quantity, originalPrice, discount, images } = req.body;
 
-        const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id);
 
-        if (!product) {
-            res.status(404);
-            throw new Error('Product not found');
-        }
-
-        // Check ownership if not admin
-        if (product.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-            res.status(403);
-            throw new Error('Not authorized to update this product');
-        }
-
-        // Handle image update to local storage
-        let updatedImages = [];
-        
-        // Get existing images keeped by the user
-        if (req.body.images) {
-            updatedImages = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-        }
-        
-        // Add new uploaded images
-        if (req.files && req.files.length > 0) {
-            const newImages = req.files.map(file => `/images/uploads/${file.filename}`);
-            updatedImages = [...updatedImages, ...newImages];
-        } else if (req.file) {
-            updatedImages.push(`/images/uploads/${req.file.filename}`);
-        }
-
-        if (updatedImages.length > 0) {
-            product.images = updatedImages;
-        }
-
+    if (product) {
         product.name = name || product.name;
-        product.price = price !== undefined ? price : product.price;
-        product.originalPrice = originalPrice !== undefined ? originalPrice : product.originalPrice;
-        product.discount = discount !== undefined ? discount : product.discount;
+        product.price = price || product.price;
+        product.originalPrice = originalPrice || product.originalPrice;
+        product.discount = discount || product.discount;
         product.description = description || product.description;
+        product.brand = brand || product.brand;
         product.category = category || product.category;
-        product.stock_quantity = actualStockUpdate !== undefined ? actualStockUpdate : product.stock_quantity;
+        product.stock_quantity = stock_quantity || product.stock_quantity;
+        if (images) product.images = images;
 
         const updatedProduct = await product.save();
         res.json(updatedProduct);
-    } catch (error) {
-        next(error);
+    } else {
+        res.status(404);
+        throw new Error('Product not found');
     }
-};
+});
 
 // @desc    Delete a product
 // @route   DELETE /api/products/:id
-// @access  Private/Seller or Admin
-const deleteProduct = async (req, res, next) => {
-    try {
-        const product = await Product.findById(req.params.id);
+// @access  Private/Seller-Admin
+const deleteProduct = asyncHandler(async (req, res) => {
+    const product = await Product.findById(req.params.id);
 
-        if (!product) {
-            res.status(404);
-            throw new Error('Product not found');
-        }
-
-        if (product.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-            res.status(403);
-            throw new Error('Not authorized to delete this product');
-        }
-
+    if (product) {
         await product.deleteOne();
         res.json({ message: 'Product removed' });
-    } catch (error) {
-        next(error);
+    } else {
+        res.status(404);
+        throw new Error('Product not found');
     }
-};
+});
 
 module.exports = {
     getProducts,

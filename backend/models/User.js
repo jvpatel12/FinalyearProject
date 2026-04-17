@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Active', 'Pending', 'Suspended', 'active', 'pending', 'suspended'], // Normalize to lowercase in future
+        enum: ['Active', 'Pending', 'Suspended', 'active', 'pending', 'supsended'], // Normalize to lowercase in future
         default: 'active'
     },
     avatar: String,
@@ -46,13 +46,16 @@ const userSchema = new mongoose.Schema({
             bankName: String
         }
     },
-    address: {
+    addresses: [{
+        name: String,
         street: String,
         city: String,
         state: String,
         zipCode: String,
-        country: String
-    }
+        country: { type: String, default: 'India' },
+        phone: String,
+        isDefault: { type: Boolean, default: false }
+    }]
 }, {
     timestamps: true
 });

@@ -13,6 +13,7 @@ import ForgotPassword from "../auth/ForgotPassword";
 import UserProfilePage from "../dashboard/customer/UserProfilePage";
 import AccountSettingsPage from "../dashboard/customer/AccountSettingsPage";
 import ProductDetailPage from "../products/ProductDetailPage";
+import ComparePage from "../products/ComparePage";
 import ShoppingCartPage from "../cart/ShoppingCartPage";
 import CheckoutPage from "../cart/CheckoutPage";
 import WishlistPage from "../dashboard/customer/WishlistPage";
@@ -56,6 +57,7 @@ const router = createBrowserRouter([
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "cart", element: <ShoppingCartPage /> },
       { path: "product/:id", element: <ProductDetailPage /> },
+      { path: "compare", element: <ComparePage /> },
       // Add routes for all missing pages
       { path: "deals", element: <Deals /> },
       { path: "new", element: <NewArrivals /> },

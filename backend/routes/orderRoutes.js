@@ -6,6 +6,7 @@ const {
     updateOrderToPaid, 
     updateOrderToDelivered, 
     updateOrderStatus, 
+    cancelOrder,
     deleteOrder, 
     getMyOrders,
     getSellerOrders,
@@ -26,6 +27,9 @@ router.route('/seller')
 router.route('/:id')
     .get(protect, getOrderById)
     .delete(protect, admin, deleteOrder);
+
+router.route('/:id/cancel')
+    .put(protect, cancelOrder);
 
 router.route('/:id/status')
     .put(protect, admin, updateOrderStatus);

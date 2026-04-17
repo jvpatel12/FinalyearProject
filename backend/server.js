@@ -19,6 +19,8 @@ const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
+const couponRoutes = require('./routes/couponRoutes');
+const addressRoutes = require('./routes/addressRoutes');
 
 // Load env vars
 const envPath = path.join(__dirname, '.env');
@@ -83,6 +85,8 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/addresses', addressRoutes);
 
 // Custom Error Handling Middleware
 app.use(notFound);

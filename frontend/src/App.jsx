@@ -2,6 +2,7 @@ import { RouterProvider } from "react-router-dom";
 import { CartContextProvider } from "./cart/CartContext.jsx";
 import { AuthProvider } from "./auth/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
+import { ComparisonProvider } from "./context/ComparisonContext";
 import { ChatContextProvider } from "./chat/ChatContext";
 import ChatWidget from "./chat/ChatWidget";
 import { Toaster } from 'react-hot-toast';
@@ -12,11 +13,13 @@ function App() {
     <AuthProvider>
       <CartContextProvider>
         <WishlistProvider>
-          <ChatContextProvider>
-            <Toaster position="top-right" reverseOrder={false} />
-            <RouterProvider router={router} />
-            <ChatWidget />
-          </ChatContextProvider>
+          <ComparisonProvider>
+            <ChatContextProvider>
+              <Toaster position="top-right" reverseOrder={false} />
+              <RouterProvider router={router} />
+              <ChatWidget />
+            </ChatContextProvider>
+          </ComparisonProvider>
         </WishlistProvider>
       </CartContextProvider>
     </AuthProvider>

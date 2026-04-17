@@ -33,23 +33,17 @@ const productSchema = new mongoose.Schema({
         required: [true, 'Please add stock quantity'],
         default: 0
     },
+    brand: {
+        type: String,
+        required: [true, 'Please add a brand']
+    },
     category: {
         type: String,
-        required: [true, 'Please select a category'],
-        enum: [
-            'Electronics',
-            'Clothing',
-            'Sports',
-            'Smartphones',
-            'Laptops',
-            'Headphones',
-            'Tablets',
-            'Accessories',
-            'Cameras',
-            'Gaming',
-            'Wearables',
-            'Other'
-        ]
+        required: [true, 'Please select a category']
+    },
+    subCategory: {
+        type: String,
+        default: ''
     },
     images: [
         {

@@ -1,18 +1,22 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Coupon = require('../models/Coupon');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
+const sendEmail = require('../utils/sendEmail');
 
 // @desc    Create new order
 // @route   POST /api/orders
 // @access  Private
 const addOrderItems = async (req, res, next) => {
     try {
-        const { shippingAddress, paymentMethod, orderItems: bodyItems, itemsPrice: bodyItemsPrice, taxPrice: bodyTaxPrice, shippingPrice: bodyShippingPrice, totalPrice: bodyTotalPrice } = req.body;
+        const { shippingAddress, paymentMethod, orderItems: bodyItems, itemsPrice: bodyItemsPrice, taxPrice: bodyTaxPrice, shippingPrice: bodyShippingPrice, totalPrice: bodyTotalPrice, couponCode } = req.body;
 
         let orderItems = [];
         let itemsPrice, taxPrice, shippingPrice, totalPrice;
+        let discountAmount = 0;
+        let appliedCoupon = null;
 
         if (bodyItems && bodyItems.length > 0) {
             // If items are provided in body (new streamlined way)
@@ -48,6 +52,24 @@ const addOrderItems = async (req, res, next) => {
             await user.save();
         }
 
+        // Apply Coupon if provided
+        if (couponCode) {
+            const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
+            if (coupon && !coupon.isExpired() && !coupon.isLimitReached() && itemsPrice >= coupon.minOrderAmount) {
+                if (coupon.discountType === 'percentage') {
+                    discountAmount = (itemsPrice * coupon.discountAmount) / 100;
+                } else {
+                    discountAmount = coupon.discountAmount;
+                }
+                totalPrice -= discountAmount;
+                appliedCoupon = coupon._id;
+                
+                // Increment coupon usage
+                coupon.usedCount += 1;
+                await coupon.save();
+            }
+        }
+
         const order = new Order({
             user: req.user._id,
             orderItems,
@@ -56,7 +78,9 @@ const addOrderItems = async (req, res, next) => {
             itemsPrice,
             taxPrice,
             shippingPrice,
-            totalPrice
+            totalPrice,
+            couponApplied: appliedCoupon,
+            discountPrice: discountAmount
         });
 
         const createdOrder = await order.save();
@@ -66,6 +90,19 @@ const addOrderItems = async (req, res, next) => {
             await Product.findByIdAndUpdate(item.product || item.productId, {
                 $inc: { stock_quantity: -(item.qty || item.quantity) }
             });
+        }
+
+        // Send confirmation email
+        try {
+            await sendEmail({
+                email: req.user.email,
+                subject: `Order Confirmation - #${createdOrder._id}`,
+                message: `Thank you for your order! Your total is ₹${totalPrice}. Your items will be shipped soon.`,
+                html: `<h1>Order Confirmation</h1><p>Thank you for your order, <b>${req.user.name}</b>!</p><p>Order ID: ${createdOrder._id}</p><p>Total: ₹${totalPrice}</p>`
+            });
+        } catch (emailErr) {
+            console.error('Email failed to send:', emailErr);
+            // Don't fail the order if email fails
         }
 
         res.status(201).json({ success: true, order: createdOrder });
@@ -182,6 +219,54 @@ const updateOrderStatus = async (req, res, next) => {
             res.status(404);
             throw new Error('Order not found');
         }
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Cancel order (by customer)
+// @route   PUT /api/orders/:id/cancel
+// @access  Private
+const cancelOrder = async (req, res, next) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            res.status(404);
+            throw new Error('Order not found');
+        }
+
+        // Verify ownership - only the order owner can cancel
+        if (order.user.toString() !== req.user._id.toString()) {
+            res.status(403);
+            throw new Error('Not authorized to cancel this order');
+        }
+
+        // Only allow cancellation if order is Pending or Confirmed
+        const cancellableStatuses = ['pending', 'confirmed'];
+        if (!cancellableStatuses.includes(order.status.toLowerCase())) {
+            res.status(400);
+            throw new Error(`Cannot cancel order with status "${order.status}". Only Pending or Confirmed orders can be cancelled.`);
+        }
+
+        order.status = 'Cancelled';
+
+        // Restore product stock
+        for (const item of order.orderItems) {
+            await Product.findByIdAndUpdate(item.product, {
+                $inc: { stock_quantity: item.qty || item.quantity }
+            });
+        }
+
+        const updatedOrder = await order.save();
+
+        // Emit socket event for real-time tracking
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`user_${order.user}`).emit('orderStatusUpdated', { orderId: order._id, status: order.status });
+        }
+
+        res.json(updatedOrder);
     } catch (error) {
         next(error);
     }
@@ -351,6 +436,7 @@ module.exports = {
     updateOrderToPaid,
     updateOrderToDelivered,
     updateOrderStatus,
+    cancelOrder,
     deleteOrder,
     getMyOrders,
     getSellerOrders,

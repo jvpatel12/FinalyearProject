@@ -46,7 +46,7 @@ const updateUserRole = async (req, res, next) => {
 
         if (user) {
             user.role = req.body.role || user.role;
-            const updatedUser = await user.save();
+            const pudatedUser = await user.save();
             res.json({
                 _id: updatedUser._id,
                 name: updatedUser.name,
